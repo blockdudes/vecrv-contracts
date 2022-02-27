@@ -83,6 +83,8 @@ module.exports = async function (deployer, network, accounts) {
   await pickleDepositor.initialLock();
   console.log("initial Lock created on DILL");
 
+  await booster.setTreasury(pickleDepositor.address);
+
   // base reward pool for vtpickle(vtDill)
   await deployer.deploy(BaseRewardPool, 0, vtpickleToken.address, pickle.address, booster.address, rFactory.address);
   const vtpickleTokenRewards = await BaseRewardPool.deployed();

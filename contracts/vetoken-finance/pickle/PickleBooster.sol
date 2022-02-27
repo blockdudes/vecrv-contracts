@@ -13,8 +13,7 @@ contract PickleBooster {
     using SafeMath for uint256;
 
     address public constant pickle = address(0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5);
-    address public constant registry = address(0x0000000022D53366457F9d5E68Ec105046FC4383);
-    uint256 public constant distributionAddressId = 4;
+    address public constant feeDistro = address(0x74C6CadE3eF61d64dcc9b97490d9FbB231e4BdCc);   
     address public constant voteOwnership = address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356);
     address public constant voteParameter = address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399);
 
@@ -37,8 +36,7 @@ contract PickleBooster {
     address public treasury;
     address public stakerRewards; //vetoken rewards
     address public lockRewards; //vtdill rewards(pickle)
-    address public lockFees; //vtdill vepickle fees
-    address public feeDistro;
+    address public lockFees; //vtdill vepickle fees  
     address public feeToken;
 
     bool public isShutdown;
@@ -146,8 +144,7 @@ contract PickleBooster {
     // Set reward token and claim contract, get from Curve's registry
     function setFeeInfo() external {
         require(msg.sender == feeManager, "!auth");
-
-        feeDistro = IRegistry(registry).get_address(distributionAddressId);
+      
         address _feeToken = IFeeDistro(feeDistro).token();
         if (feeToken != _feeToken) {
             //create a new reward contract for the new token
