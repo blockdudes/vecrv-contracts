@@ -13,7 +13,6 @@ const Booster = artifacts.require("PickleBooster");
 const TokenFactory = artifacts.require("PickleTokenFactory");
 const vetokenRewardPool = artifacts.require("PickleVtRewardPool");
 const PoolManager = artifacts.require("PicklePoolManager");
-const ForceSend = artifacts.require("ForceSend");
 const SmartWalletWhitelist = artifacts.require("SmartWalletWhitelist");
 const dillABI = require("./helper/DILL.json");
 const IExchange = artifacts.require("IExchange");
