@@ -19,6 +19,8 @@ contract veTokenMinter is Initializable, OwnableUpgradeable {
     uint256 public totalCliffs;
     uint256 public reductionPerCliff;
     uint256 public totalSupply;
+    mapping(address => uint256) public veAssetWeights;
+    uint256 public totalWeight;
 
     function __veTokenMinter_init(
         address veTokenAddress,
@@ -38,8 +40,15 @@ contract veTokenMinter is Initializable, OwnableUpgradeable {
         operators.remove(_operator);
     }
 
+    function updateveAssetWeight(address veAssetAddress, uint256 newWeight) external onlyOwner {
+        require(operators.contains(veAssetAddress), "not an veAsset");
+        totalWeight -= veAssetWeights[veAssetAddress];
+        veAssetWeights[veAssetAddress] = newWeight;
+        totalWeight += newWeight;
+    }
+
     function mint(address _to, uint256 _amount) external {
-        require(operators.contains(_msgSender()), "");
+        require(operators.contains(_msgSender()), "not an operator");
 
         uint256 supply = totalSupply;
 

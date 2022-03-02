@@ -85,7 +85,7 @@ module.exports = {
       provider: () => new HDWalletProvider(secret.mnemonic, `wss://mainnet.infura.io/ws/v3/${secret.infuraKey}`),
       network_id: 1, // Mainnet's id
       gas: 8000000,
-      gasPrice: 50000000000,
+      gasPrice: 70000000000,
       skipDryRun: true,
     },
     avalanche_testnet: {
