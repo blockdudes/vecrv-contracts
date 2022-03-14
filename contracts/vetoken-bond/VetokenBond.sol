@@ -1,65 +1,11 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-12-21
+ *Submitted for verification at Etherscan.io on 2021-09-25
  */
 
-// Sources flattened with hardhat v2.8.0 https://hardhat.org
-
-// File hardhat/console.sol@v2.8.0
-
-// File contracts/LPBondDepositoryRewardBased.sol
+// File contracts/libraries/SafeMath.sol
 
 // SPDX-License-Identifier: AGPL-3.0-or-later
-
 pragma solidity 0.7.5;
-
-interface IOwnable {
-    function policy() external view returns (address);
-
-    function renounceManagement() external;
-
-    function pushManagement(address newOwner_) external;
-
-    function pullManagement() external;
-}
-
-contract Ownable is IOwnable {
-    address internal _owner;
-    address internal _newOwner;
-
-    event OwnershipPushed(address indexed previousOwner, address indexed newOwner);
-    event OwnershipPulled(address indexed previousOwner, address indexed newOwner);
-
-    constructor() {
-        _owner = msg.sender;
-        emit OwnershipPushed(address(0), _owner);
-    }
-
-    function policy() public view override returns (address) {
-        return _owner;
-    }
-
-    modifier onlyPolicy() {
-        require(_owner == msg.sender, "Ownable: caller is not the owner");
-        _;
-    }
-
-    function renounceManagement() public virtual override onlyPolicy {
-        emit OwnershipPushed(_owner, address(0));
-        _owner = address(0);
-    }
-
-    function pushManagement(address newOwner_) public virtual override onlyPolicy {
-        require(newOwner_ != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipPushed(_owner, newOwner_);
-        _newOwner = newOwner_;
-    }
-
-    function pullManagement() public virtual override {
-        require(msg.sender == _newOwner, "Ownable: must be new owner to pull");
-        emit OwnershipPulled(_owner, _newOwner);
-        _owner = _newOwner;
-    }
-}
 
 library SafeMath {
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -135,6 +81,10 @@ library SafeMath {
         }
     }
 }
+
+// File contracts/libraries/Address.sol
+
+pragma solidity 0.7.5;
 
 library Address {
     function isContract(address account) internal view returns (bool) {
@@ -297,6 +247,10 @@ library Address {
     }
 }
 
+// File contracts/interfaces/IERC20.sol
+
+pragma solidity 0.7.5;
+
 interface IERC20 {
     function decimals() external view returns (uint8);
 
@@ -321,256 +275,9 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-abstract contract ERC20 is IERC20 {
-    using SafeMath for uint256;
+// File contracts/libraries/SafeERC20.sol
 
-    // TODO comment actual hash value.
-    bytes32 private constant ERC20TOKEN_ERC1820_INTERFACE_ID = keccak256("ERC20Token");
-
-    mapping(address => uint256) internal _balances;
-
-    mapping(address => mapping(address => uint256)) internal _allowances;
-
-    uint256 internal _totalSupply;
-
-    string internal _name;
-
-    string internal _symbol;
-
-    uint8 internal _decimals;
-
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint8 decimals_
-    ) {
-        _name = name_;
-        _symbol = symbol_;
-        _decimals = decimals_;
-    }
-
-    function name() public view returns (string memory) {
-        return _name;
-    }
-
-    function symbol() public view returns (string memory) {
-        return _symbol;
-    }
-
-    function decimals() public view override returns (uint8) {
-        return _decimals;
-    }
-
-    function totalSupply() public view override returns (uint256) {
-        return _totalSupply;
-    }
-
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(msg.sender, recipient, amount);
-        return true;
-    }
-
-    function allowance(address owner, address spender)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _allowances[owner][spender];
-    }
-
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(msg.sender, spender, amount);
-        return true;
-    }
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-        _approve(
-            sender,
-            msg.sender,
-            _allowances[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance")
-        );
-        return true;
-    }
-
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(addedValue));
-        return true;
-    }
-
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        returns (bool)
-    {
-        _approve(
-            msg.sender,
-            spender,
-            _allowances[msg.sender][spender].sub(
-                subtractedValue,
-                "ERC20: decreased allowance below zero"
-            )
-        );
-        return true;
-    }
-
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        _balances[sender] = _balances[sender].sub(
-            amount,
-            "ERC20: transfer amount exceeds balance"
-        );
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
-    }
-
-    function _mint(address account_, uint256 ammount_) internal virtual {
-        require(account_ != address(0), "ERC20: mint to the zero address");
-        _beforeTokenTransfer(address(this), account_, ammount_);
-        _totalSupply = _totalSupply.add(ammount_);
-        _balances[account_] = _balances[account_].add(ammount_);
-        emit Transfer(address(this), account_, ammount_);
-    }
-
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
-        _totalSupply = _totalSupply.sub(amount);
-        emit Transfer(account, address(0), amount);
-    }
-
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    function _beforeTokenTransfer(
-        address from_,
-        address to_,
-        uint256 amount_
-    ) internal virtual {}
-}
-
-interface IERC2612Permit {
-    function permit(
-        address owner,
-        address spender,
-        uint256 amount,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
-
-    function nonces(address owner) external view returns (uint256);
-}
-
-library Counters {
-    using SafeMath for uint256;
-
-    struct Counter {
-        uint256 _value; // default: 0
-    }
-
-    function current(Counter storage counter) internal view returns (uint256) {
-        return counter._value;
-    }
-
-    function increment(Counter storage counter) internal {
-        counter._value += 1;
-    }
-
-    function decrement(Counter storage counter) internal {
-        counter._value = counter._value.sub(1);
-    }
-}
-
-abstract contract ERC20Permit is ERC20, IERC2612Permit {
-    using Counters for Counters.Counter;
-
-    mapping(address => Counters.Counter) private _nonces;
-
-    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public constant PERMIT_TYPEHASH =
-        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-
-    bytes32 public DOMAIN_SEPARATOR;
-
-    constructor() {
-        uint256 chainID;
-        assembly {
-            chainID := chainid()
-        }
-
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
-                keccak256(bytes(name())),
-                keccak256(bytes("1")), // Version
-                chainID,
-                address(this)
-            )
-        );
-    }
-
-    function permit(
-        address owner,
-        address spender,
-        uint256 amount,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public virtual override {
-        require(block.timestamp <= deadline, "Permit: expired deadline");
-
-        bytes32 hashStruct = keccak256(
-            abi.encode(PERMIT_TYPEHASH, owner, spender, amount, _nonces[owner].current(), deadline)
-        );
-
-        bytes32 _hash = keccak256(abi.encodePacked(uint16(0x1901), DOMAIN_SEPARATOR, hashStruct));
-
-        address signer = ecrecover(_hash, v, r, s);
-        require(signer != address(0) && signer == owner, "ZeroSwapPermit: Invalid signature");
-
-        _nonces[owner].increment();
-        _approve(owner, spender, amount);
-    }
-
-    function nonces(address owner) public view override returns (uint256) {
-        return _nonces[owner].current();
-    }
-}
+pragma solidity 0.7.5;
 
 library SafeERC20 {
     using SafeMath for uint256;
@@ -648,6 +355,10 @@ library SafeERC20 {
     }
 }
 
+// File contracts/libraries/FullMath.sol
+
+pragma solidity 0.7.5;
+
 library FullMath {
     function fullMul(uint256 x, uint256 y) private pure returns (uint256 l, uint256 h) {
         uint256 mm = mulmod(x, y, uint256(-1));
@@ -691,6 +402,91 @@ library FullMath {
     }
 }
 
+// File contracts/libraries/FixedPoint.sol
+
+pragma solidity 0.7.5;
+
+library Babylonian {
+    function sqrt(uint256 x) internal pure returns (uint256) {
+        if (x == 0) return 0;
+
+        uint256 xx = x;
+        uint256 r = 1;
+        if (xx >= 0x100000000000000000000000000000000) {
+            xx >>= 128;
+            r <<= 64;
+        }
+        if (xx >= 0x10000000000000000) {
+            xx >>= 64;
+            r <<= 32;
+        }
+        if (xx >= 0x100000000) {
+            xx >>= 32;
+            r <<= 16;
+        }
+        if (xx >= 0x10000) {
+            xx >>= 16;
+            r <<= 8;
+        }
+        if (xx >= 0x100) {
+            xx >>= 8;
+            r <<= 4;
+        }
+        if (xx >= 0x10) {
+            xx >>= 4;
+            r <<= 2;
+        }
+        if (xx >= 0x8) {
+            r <<= 1;
+        }
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1;
+        r = (r + x / r) >> 1; // Seven iterations should be enough
+        uint256 r1 = x / r;
+        return (r < r1 ? r : r1);
+    }
+}
+
+library BitMath {
+    function mostSignificantBit(uint256 x) internal pure returns (uint8 r) {
+        require(x > 0, "BitMath::mostSignificantBit: zero");
+
+        if (x >= 0x100000000000000000000000000000000) {
+            x >>= 128;
+            r += 128;
+        }
+        if (x >= 0x10000000000000000) {
+            x >>= 64;
+            r += 64;
+        }
+        if (x >= 0x100000000) {
+            x >>= 32;
+            r += 32;
+        }
+        if (x >= 0x10000) {
+            x >>= 16;
+            r += 16;
+        }
+        if (x >= 0x100) {
+            x >>= 8;
+            r += 8;
+        }
+        if (x >= 0x10) {
+            x >>= 4;
+            r += 4;
+        }
+        if (x >= 0x4) {
+            x >>= 2;
+            r += 2;
+        }
+        if (x >= 0x2) r += 1;
+    }
+}
+
 library FixedPoint {
     struct uq112x112 {
         uint224 _x;
@@ -731,55 +527,83 @@ library FixedPoint {
             return uq112x112(uint224(result));
         }
     }
+
+    // square root of a UQ112x112
+    // lossy between 0/1 and 40 bits
+    function sqrt(uq112x112 memory self) internal pure returns (uq112x112 memory) {
+        if (self._x <= uint144(-1)) {
+            return uq112x112(uint224(Babylonian.sqrt(uint256(self._x) << 112)));
+        }
+
+        uint8 safeShiftBits = 255 - BitMath.mostSignificantBit(self._x);
+        safeShiftBits -= safeShiftBits % 2;
+        return
+            uq112x112(
+                uint224(
+                    Babylonian.sqrt(uint256(self._x) << safeShiftBits) <<
+                        ((112 - safeShiftBits) / 2)
+                )
+            );
+    }
 }
+
+// File contracts/interfaces/ITreasury.sol
+
+pragma solidity 0.7.5;
 
 interface ITreasury {
     function deposit(
-        uint256 _amount,
-        address _token,
-        uint256 _profit
-    ) external returns (bool);
+        address _principleTokenAddress,
+        uint256 _amountPrincipleToken,
+        uint256 _amountPayoutToken
+    ) external;
 
-    function valueOf(address _token, uint256 _amount) external view returns (uint256 value_);
-
-    function getFloor(address _token) external view returns (uint256);
-
-    function mintRewards(address _recipient, uint256 _amount) external;
+    function valueOfToken(address _principleTokenAddress, uint256 _amount)
+        external
+        view
+        returns (uint256 value_);
 }
 
-interface IBondCalculator {
-    function valuation(address _LP, uint256 _amount) external view returns (uint256);
+// File contracts/types/Ownable.sol
 
-    function markdown(address _LP) external view returns (uint256);
+pragma solidity 0.7.5;
+
+contract Ownable {
+    address public policy;
+
+    constructor() {
+        policy = msg.sender;
+    }
+
+    modifier onlyPolicy() {
+        require(policy == msg.sender, "Ownable: caller is not the owner");
+        _;
+    }
+
+    function transferManagment(address _newOwner) external onlyPolicy {
+        require(_newOwner != address(0));
+        policy = _newOwner;
+    }
 }
 
 interface IStaking {
-    function stake(uint256 _amount, address _recipient) external returns (bool);
+    function stakeFor(address _recipient, uint256 _amount) external returns (bool);
 }
 
-interface IStakingHelper {
-    function stake(uint256 _amount, address _recipient) external;
-}
+// File contracts/VetokenProCustomBond.sol
 
-contract veTokenBond is Ownable {
+pragma solidity 0.7.5;
+
+contract VetokenBond is Ownable {
     using FixedPoint for *;
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
     /* ======== EVENTS ======== */
 
-    event BondCreated(
-        uint256 deposit,
-        uint256 indexed payout,
-        uint256 indexed expires,
-        uint256 indexed nativePrice
-    );
-    event BondRedeemed(address indexed recipient, uint256 payout, uint256 remaining);
-    event BondPriceChanged(
-        uint256 indexed nativePrice,
-        uint256 indexed internalPrice,
-        uint256 indexed debtRatio
-    );
+    event BondCreated(uint256 deposit, uint256 payout, uint256 expires);
+    event BondRedeemed(address recipient, uint256 payout, uint256 remaining);
+    event BondPriceChanged(uint256 internalPrice, uint256 debtRatio);
     event ControlVariableAdjustment(
         uint256 initialBCV,
         uint256 newBCV,
@@ -789,28 +613,36 @@ contract veTokenBond is Ownable {
 
     /* ======== STATE VARIABLES ======== */
 
-    address public immutable VE3D; // token given as payment for bond
-    address public immutable principal; // token used to create bond
-    address public immutable treasury; // mints VE3D when receives principal
-    address public immutable VETOKENDAO; // receives profit share from bond
-    address public VETOKENTreasury; // Vetoken treasury
-
-    bool public immutable isLiquidityBond; // LP and Reserve bonds are treated slightly different
-    address public immutable bondCalculator; // calculates value of LP tokens
+    IERC20 immutable payoutToken; // token paid for principal
+    IERC20 immutable principalToken; // inflow token
+    ITreasury immutable customTreasury; // pays for and receives principal
+    address immutable vetokenDAO;
+    address vetokenTreasury; // receives fee
 
     address public staking; // to auto-stake payout
-    address public stakingHelper; // to stake and claim if no staking warmup
-    bool public useHelper;
+    bool public autoStake;
+
+    uint256 public totalPrincipalBonded;
+    uint256 public totalPayoutGiven;
 
     Terms public terms; // stores terms for new bonds
     Adjust public adjustment; // stores adjustment to BCV data
+    FeeTiers[] private feeTiers; // stores fee tiers
 
     mapping(address => Bond) public bondInfo; // stores bond information for depositors
 
     uint256 public totalDebt; // total value of outstanding bonds; used for pricing
     uint256 public lastDecay; // reference block for debt decay
 
+    address immutable subsidyRouter; // pays subsidy in OHM to custom treasury
+    uint256 payoutSinceLastSubsidy; // principal accrued since subsidy paid
+
     /* ======== STRUCTS ======== */
+
+    struct FeeTiers {
+        uint256 tierCeilings; // principal bonded till next tier
+        uint256 fees; // in ten-thousandths (i.e. 33300 = 3.33%)
+    }
 
     // Info for creating new bonds
     struct Terms {
@@ -818,17 +650,15 @@ contract veTokenBond is Ownable {
         uint256 vestingTerm; // in blocks
         uint256 minimumPrice; // vs principal value
         uint256 maxPayout; // in thousandths of a %. i.e. 500 = 0.5%
-        uint256 fee; // as % of bond payout, in hundreths. ( 500 = 5% = 0.05 for every 1 paid)
-        uint256 tithe; // in thousandths of a %. i.e. 500 = 0.5%
-        uint256 maxDebt; // 9 decimal debt ratio, max % total supply created as debt
+        uint256 maxDebt; // payout token decimal debt ratio, max % total supply created as debt
     }
 
     // Info for bond holder
     struct Bond {
-        uint256 payout; // VE3D remaining to be paid
+        uint256 payout; // payout token remaining to be paid
         uint256 vesting; // Blocks left to vest
         uint256 lastBlock; // Last interaction
-        uint256 pricePaid; // In native asset, for front end viewing
+        uint256 truePricePaid; // Price paid (principal tokens per payout token) in ten-millionths - 4000000 = 0.4
     }
 
     // Info for incremental adjustments to control variable
@@ -840,29 +670,41 @@ contract veTokenBond is Ownable {
         uint256 lastBlock; // block when last adjustment made
     }
 
-    /* ======== INITIALIZATION ======== */
+    /* ======== CONSTRUCTOR ======== */
 
     constructor(
-        address _VE3D,
-        address _principal,
-        address _treasury,
-        address _bondCalculator,
-        address _VETOKENDAO,
-        address _VETOKENTreasury
+        address _customTreasury,
+        address _payoutToken,
+        address _principalToken,
+        address _vetokenTreasury,
+        address _subsidyRouter,
+        address _initialOwner,
+        address _vetokenDAO,
+        uint256[] memory _tierCeilings,
+        uint256[] memory _fees
     ) {
-        require(_VE3D != address(0));
-        VE3D = _VE3D;
-        require(_principal != address(0));
-        principal = _principal;
-        require(_treasury != address(0));
-        treasury = _treasury;
-        require(_VETOKENDAO != address(0));
-        VETOKENDAO = _VETOKENDAO;
-        // bondCalculator should be address(0) if not LP bond
-        bondCalculator = _bondCalculator;
-        isLiquidityBond = (_bondCalculator != address(0));
-        VETOKENTreasury = _VETOKENTreasury;
+        require(_customTreasury != address(0));
+        customTreasury = ITreasury(_customTreasury);
+        require(_payoutToken != address(0));
+        payoutToken = IERC20(_payoutToken);
+        require(_principalToken != address(0));
+        principalToken = IERC20(_principalToken);
+        require(_vetokenTreasury != address(0));
+        vetokenTreasury = _vetokenTreasury;
+        require(_subsidyRouter != address(0));
+        subsidyRouter = _subsidyRouter;
+        require(_initialOwner != address(0));
+        policy = _initialOwner;
+        require(_vetokenDAO != address(0));
+        vetokenDAO = _vetokenDAO;
+        require(_tierCeilings.length == _fees.length, "tier length and fee length not the same");
+
+        for (uint256 i; i < _tierCeilings.length; i++) {
+            feeTiers.push(FeeTiers({tierCeilings: _tierCeilings[i], fees: _fees[i]}));
+        }
     }
+
+    /* ======== INITIALIZATION ======== */
 
     /**
      *  @notice initializes bond parameters
@@ -870,29 +712,24 @@ contract veTokenBond is Ownable {
      *  @param _vestingTerm uint
      *  @param _minimumPrice uint
      *  @param _maxPayout uint
-     *  @param _fee uint
      *  @param _maxDebt uint
      *  @param _initialDebt uint
      */
-    function initializeBondTerms(
+    function initializeBond(
         uint256 _controlVariable,
         uint256 _vestingTerm,
         uint256 _minimumPrice,
         uint256 _maxPayout,
-        uint256 _fee,
         uint256 _maxDebt,
-        uint256 _tithe,
         uint256 _initialDebt
     ) external onlyPolicy {
-        require(terms.controlVariable == 0, "Bonds must be initialized from 0");
+        require(currentDebt() == 0, "Debt must be 0 for initialization");
         terms = Terms({
             controlVariable: _controlVariable,
             vestingTerm: _vestingTerm,
             minimumPrice: _minimumPrice,
             maxPayout: _maxPayout,
-            fee: _fee,
-            maxDebt: _maxDebt,
-            tithe: _tithe
+            maxDebt: _maxDebt
         });
         totalDebt = _initialDebt;
         lastDecay = block.number;
@@ -903,7 +740,6 @@ contract veTokenBond is Ownable {
     enum PARAMETER {
         VESTING,
         PAYOUT,
-        FEE,
         DEBT
     }
 
@@ -921,12 +757,8 @@ contract veTokenBond is Ownable {
             // 1
             require(_input <= 1000, "Payout cannot be above 1 percent");
             terms.maxPayout = _input;
-        } else if (_parameter == PARAMETER.FEE) {
-            // 2
-            require(_input <= 10000, "DAO fee cannot exceed payout");
-            terms.fee = _input;
         } else if (_parameter == PARAMETER.DEBT) {
-            // 3
+            // 2
             terms.maxDebt = _input;
         }
     }
@@ -944,7 +776,7 @@ contract veTokenBond is Ownable {
         uint256 _target,
         uint256 _buffer
     ) external onlyPolicy {
-        require(_increment <= terms.controlVariable.mul(25).div(1000), "Increment too large");
+        require(_increment <= terms.controlVariable.mul(30).div(1000), "Increment too large");
 
         adjustment = Adjust({
             add: _addition,
@@ -958,17 +790,32 @@ contract veTokenBond is Ownable {
     /**
      *  @notice set contract for auto stake
      *  @param _staking address
-     *  @param _helper bool
      */
-    function setStaking(address _staking, bool _helper) external onlyPolicy {
+    function setStaking(address _staking, bool _autoStake) external onlyPolicy {
         require(_staking != address(0));
-        if (_helper) {
-            useHelper = true;
-            stakingHelper = _staking;
-        } else {
-            useHelper = false;
-            staking = _staking;
-        }
+
+        staking = _staking;
+        autoStake = _autoStake;
+    }
+
+    /**
+     *  @notice change address of Vetoken Treasury
+     *  @param _vetokenTreasury uint
+     */
+    function changeVetokenTreasury(address _vetokenTreasury) external {
+        require(msg.sender == vetokenDAO, "Only Vetoken DAO");
+        vetokenTreasury = _vetokenTreasury;
+    }
+
+    /**
+     *  @notice subsidy controller checks payouts since last subsidy and resets counter
+     *  @return payoutSinceLastSubsidy_ uint
+     */
+    function paySubsidy() external returns (uint256 payoutSinceLastSubsidy_) {
+        require(msg.sender == subsidyRouter, "Only subsidy controller");
+
+        payoutSinceLastSubsidy_ = payoutSinceLastSubsidy;
+        payoutSinceLastSubsidy = 0;
     }
 
     /* ======== USER FUNCTIONS ======== */
@@ -990,56 +837,51 @@ contract veTokenBond is Ownable {
         decayDebt();
         require(totalDebt <= terms.maxDebt, "Max capacity reached");
 
-        uint256 nativePrice = _bondPrice();
+        uint256 nativePrice = trueBondPrice();
 
         require(_maxPrice >= nativePrice, "Slippage limit: more than max price"); // slippage protection
 
-        uint256 tithePrincipal = _amount.mul(terms.tithe).div(100000);
+        uint256 value = customTreasury.valueOfToken(address(principalToken), _amount);
+        uint256 payout = _payoutFor(value); // payout to bonder is computed
 
-        uint256 value = ITreasury(treasury).valueOf(principal, _amount);
-        //console.log(" value = ", value);
-        uint256 payout = payoutFor(value); // payout to bonder is computed
-        //console.log("payout = ",payout);
-
-        require(payout >= 10000000, "Bond too small"); // must be > 0.01 VE3D ( underflow protection )
+        require(payout >= 10**payoutToken.decimals() / 100, "Bond too small"); // must be > 0.01 payout token ( underflow protection )
         require(payout <= maxPayout(), "Bond too large"); // size protection because there is no slippage
+
+        // profits are calculated
+        uint256 fee = payout.mul(currentVetokenFee()).div(1e6);
 
         /**
             principal is transferred in
             approved and
-            deposited into the treasury, returning (_amount - profit) VE3D
+            deposited into the treasury, returning (_amount - profit) payout token
          */
-        IERC20(principal).safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(principal).safeTransfer(VETOKENTreasury, tithePrincipal);
+        principalToken.safeTransferFrom(msg.sender, address(this), _amount);
+        principalToken.approve(address(customTreasury), _amount);
+        customTreasury.deposit(address(principalToken), _amount, payout);
 
-        uint256 amountDeposit = _amount.sub(tithePrincipal);
-        IERC20(principal).safeTransfer(address(treasury), amountDeposit);
-
-        //call mintRewards
-        uint256 titheVET = payout.mul(terms.tithe).div(100000);
-        uint256 fee = payout.mul(terms.fee).div(100000);
-        uint256 totalMint = titheVET.add(fee).add(payout);
-
-        ITreasury(treasury).mintRewards(address(this), totalMint);
-
-        // fee is transferred to daos
-        IERC20(VE3D).safeTransfer(VETOKENDAO, fee);
-        IERC20(VE3D).safeTransfer(VETOKENTreasury, titheVET);
+        if (fee != 0) {
+            // fee is transferred to dao
+            payoutToken.transfer(vetokenTreasury, fee);
+        }
 
         // total debt is increased
         totalDebt = totalDebt.add(value);
 
         // depositor info is stored
         bondInfo[_depositor] = Bond({
-            payout: bondInfo[_depositor].payout.add(payout),
+            payout: bondInfo[_depositor].payout.add(payout.sub(fee)),
             vesting: terms.vestingTerm,
             lastBlock: block.number,
-            pricePaid: nativePrice
+            truePricePaid: trueBondPrice()
         });
 
         // indexed events are emitted
-        emit BondCreated(_amount, payout, block.number.add(terms.vestingTerm), nativePrice);
-        //emit BondPriceChanged( bondPriceInUSD(), _bondPrice(), debtRatio() );
+        emit BondCreated(_amount, payout, block.number.add(terms.vestingTerm));
+        emit BondPriceChanged(_bondPrice(), debtRatio());
+
+        totalPrincipalBonded = totalPrincipalBonded.add(_amount); // total bonded increased
+        totalPayoutGiven = totalPayoutGiven.add(payout); // total payout increased
+        payoutSinceLastSubsidy = payoutSinceLastSubsidy.add(payout); // subsidy counter increased
 
         adjust(); // control variable is adjusted
         return payout;
@@ -1047,34 +889,38 @@ contract veTokenBond is Ownable {
 
     /**
      *  @notice redeem bond for user
-     *  @param _recipient address
+     *  @param _depositor address
      *  @param _stake bool
      *  @return uint
      */
-    function redeem(address _recipient, bool _stake) external returns (uint256) {
-        Bond memory info = bondInfo[_recipient];
-        uint256 percentVested = percentVestedFor(_recipient); // (blocks since last interaction / vesting term remaining)
+    function redeem(address _depositor, bool _stake) external returns (uint256) {
+        Bond memory info = bondInfo[_depositor];
+        uint256 percentVested = percentVestedFor(_depositor); // (blocks since last interaction / vesting term remaining)
+
+        if (autoStake) {
+            _stake = true;
+        }
 
         if (percentVested >= 10000) {
             // if fully vested
-            delete bondInfo[_recipient]; // delete user info
-            emit BondRedeemed(_recipient, info.payout, 0); // emit bond data
-            return stakeOrSend(_recipient, _stake, info.payout); // pay user everything due
+            delete bondInfo[_depositor]; // delete user info
+            emit BondRedeemed(_depositor, info.payout, 0); // emit bond data
+            return stakeOrSend(_depositor, _stake, info.payout); // pay user everything due
         } else {
             // if unfinished
             // calculate payout vested
             uint256 payout = info.payout.mul(percentVested).div(10000);
 
             // store updated deposit info
-            bondInfo[_recipient] = Bond({
+            bondInfo[_depositor] = Bond({
                 payout: info.payout.sub(payout),
                 vesting: info.vesting.sub(block.number.sub(info.lastBlock)),
                 lastBlock: block.number,
-                pricePaid: info.pricePaid
+                truePricePaid: info.truePricePaid
             });
 
-            emit BondRedeemed(_recipient, payout, bondInfo[_recipient].payout);
-            return stakeOrSend(_recipient, _stake, payout);
+            emit BondRedeemed(_depositor, payout, bondInfo[_depositor].payout);
+            return stakeOrSend(_depositor, _stake, info.payout); // pay user everything due
         }
     }
 
@@ -1093,17 +939,11 @@ contract veTokenBond is Ownable {
     ) internal returns (uint256) {
         if (!_stake) {
             // if user does not want to stake
-            IERC20(VE3D).transfer(_recipient, _amount); // send payout
+            payoutToken.transfer(_recipient, _amount); // send payout
         } else {
             // if user wants to stake
-            if (useHelper) {
-                // use if staking warmup is 0
-                IERC20(VE3D).approve(stakingHelper, _amount);
-                IStakingHelper(stakingHelper).stake(_amount, _recipient);
-            } else {
-                IERC20(VE3D).approve(staking, _amount);
-                IStaking(staking).stake(_amount, _recipient);
-            }
+            payoutToken.approve(staking, _amount);
+            IStaking(staking).stakeFor(_recipient, _amount);
         }
         return _amount;
     }
@@ -1144,50 +984,14 @@ contract veTokenBond is Ownable {
         lastDecay = block.number;
     }
 
-    /* ======== VIEW FUNCTIONS ======== */
-
-    /**
-     *  @notice determine maximum bond size
-     *  @return uint
-     */
-    function maxPayout() public view returns (uint256) {
-        return IERC20(VE3D).totalSupply().mul(terms.maxPayout).div(100000);
-    }
-
-    /**
-     *  @notice calculate interest due for new bond
-     *  @param _value uint
-     *  @return uint
-     */
-    function payoutFor(uint256 _value) public view returns (uint256) {
-        return FixedPoint.fraction(_value, bondPrice()).decode112with18().div(1e14);
-    }
-
-    /**
-     *  @notice calculate current bond premium
-     *  @return price_ uint
-     */
-    function bondPrice() public view returns (uint256 price_) {
-        price_ = terms
-            .controlVariable
-            .mul(debtRatio())
-            .add(ITreasury(treasury).getFloor(principal))
-            .div(1e5);
-        if (price_ < terms.minimumPrice) {
-            price_ = terms.minimumPrice;
-        }
-    }
-
     /**
      *  @notice calculate current bond price and remove floor if above
      *  @return price_ uint
      */
     function _bondPrice() internal returns (uint256 price_) {
-        price_ = terms
-            .controlVariable
-            .mul(debtRatio())
-            .add(ITreasury(treasury).getFloor(principal))
-            .div(1e5);
+        price_ = terms.controlVariable.mul(debtRatio()).div(
+            10**(uint256(payoutToken.decimals()).sub(5))
+        );
         if (price_ < terms.minimumPrice) {
             price_ = terms.minimumPrice;
         } else if (terms.minimumPrice != 0) {
@@ -1195,39 +999,66 @@ contract veTokenBond is Ownable {
         }
     }
 
+    /* ======== VIEW FUNCTIONS ======== */
+
     /**
-     *  @notice converts bond price to DAI value
+     *  @notice calculate current bond premium
      *  @return price_ uint
      */
-    function bondPriceInUSD() public view returns (uint256 price_) {
-        if (isLiquidityBond) {
-            price_ = bondPrice().mul(IBondCalculator(bondCalculator).markdown(principal)).div(100);
-        } else {
-            price_ = bondPrice().mul(10**IERC20(principal).decimals()).div(100);
+    function bondPrice() public view returns (uint256 price_) {
+        price_ = terms.controlVariable.mul(debtRatio()).div(
+            10**(uint256(payoutToken.decimals()).sub(5))
+        );
+        if (price_ < terms.minimumPrice) {
+            price_ = terms.minimumPrice;
         }
     }
 
     /**
-     *  @notice calculate current ratio of debt to VE3D supply
+     *  @notice calculate true bond price a user pays
+     *  @return price_ uint
+     */
+    function trueBondPrice() public view returns (uint256 price_) {
+        price_ = bondPrice().add(bondPrice().mul(currentVetokenFee()).div(1e6));
+    }
+
+    /**
+     *  @notice determine maximum bond size
+     *  @return uint
+     */
+    function maxPayout() public view returns (uint256) {
+        return payoutToken.totalSupply().mul(terms.maxPayout).div(100000);
+    }
+
+    /**
+     *  @notice calculate total interest due for new bond
+     *  @param _value uint
+     *  @return uint
+     */
+    function _payoutFor(uint256 _value) internal view returns (uint256) {
+        return FixedPoint.fraction(_value, bondPrice()).decode112with18().div(1e11);
+    }
+
+    /**
+     *  @notice calculate user's interest due for new bond, accounting for Vetoken Fee
+     *  @param _value uint
+     *  @return uint
+     */
+    function payoutFor(uint256 _value) external view returns (uint256) {
+        uint256 total = FixedPoint.fraction(_value, bondPrice()).decode112with18().div(1e11);
+        return total.sub(total.mul(currentVetokenFee()).div(1e6));
+    }
+
+    /**
+     *  @notice calculate current ratio of debt to payout token supply
+     *  @notice protocols using vetoken Pro should be careful when quickly adding large %s to total supply
      *  @return debtRatio_ uint
      */
     function debtRatio() public view returns (uint256 debtRatio_) {
-        uint256 supply = IERC20(VE3D).totalSupply();
-        debtRatio_ = FixedPoint.fraction(currentDebt().mul(1e9), supply).decode112with18().div(
-            1e18
-        );
-    }
-
-    /**
-     *  @notice debt ratio in same terms for reserve or liquidity bonds
-     *  @return uint
-     */
-    function standardizedDebtRatio() external view returns (uint256) {
-        if (isLiquidityBond) {
-            return debtRatio().mul(IBondCalculator(bondCalculator).markdown(principal)).div(1e9);
-        } else {
-            return debtRatio();
-        }
+        debtRatio_ = FixedPoint
+            .fraction(currentDebt().mul(10**payoutToken.decimals()), payoutToken.totalSupply())
+            .decode112with18()
+            .div(1e18);
     }
 
     /**
@@ -1268,7 +1099,7 @@ contract veTokenBond is Ownable {
     }
 
     /**
-     *  @notice calculate amount of VE3D available for claim by depositor
+     *  @notice calculate amount of payout token available for claim by depositor
      *  @param _depositor address
      *  @return pendingPayout_ uint
      */
@@ -1283,21 +1114,16 @@ contract veTokenBond is Ownable {
         }
     }
 
-    /* ======= AUXILLIARY ======= */
-
     /**
-     *  @notice allow anyone to send lost tokens (excluding principal or VE3D) to the VETOKENDAO
-     *  @return bool
+     *  @notice current fee Vetoken takes of each bond
+     *  @return currentFee_ uint
      */
-    function recoverLostToken(address _token) external returns (bool) {
-        require(_token != VE3D);
-        require(_token != principal);
-        IERC20(_token).safeTransfer(VETOKENDAO, IERC20(_token).balanceOf(address(this)));
-        return true;
-    }
-
-    function setVETOKENTreasury(address _newTreasury) external {
-        require(msg.sender == VETOKENDAO, "UNAUTHORISED : YOU'RE NOT VETOKEN");
-        VETOKENTreasury = _newTreasury;
+    function currentVetokenFee() public view returns (uint256 currentFee_) {
+        uint256 tierLength = feeTiers.length;
+        for (uint256 i; i < tierLength; i++) {
+            if (totalPrincipalBonded < feeTiers[i].tierCeilings || i == tierLength - 1) {
+                return feeTiers[i].fees;
+            }
+        }
     }
 }

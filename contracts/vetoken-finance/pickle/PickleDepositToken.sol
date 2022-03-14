@@ -18,7 +18,7 @@ contract PickleDepositToken is ERC20 {
     constructor(address _operator, address _lptoken)
         ERC20(
             string(abi.encodePacked(ERC20(_lptoken).name(), " veToken Deposit")),
-            string(abi.encodePacked("vt", ERC20(_lptoken).symbol()))
+            string(abi.encodePacked("VE3D", ERC20(_lptoken).symbol()))
         )
     {
         operator = _operator;

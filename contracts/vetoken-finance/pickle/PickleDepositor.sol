@@ -108,7 +108,7 @@ contract PickleDepositor {
         }
     }
 
-    //deposit pickle for vtDill
+    //deposit pickle for ve3dDill
     //can locking immediately or defer locking to someone else by paying a fee.
     //while users can choose to lock or defer, this is mostly in place so that
     //the vetoken reward contract isnt costly to claim rewards

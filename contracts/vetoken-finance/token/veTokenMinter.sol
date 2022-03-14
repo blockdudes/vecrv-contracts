@@ -22,6 +22,8 @@ contract veTokenMinter is Initializable, OwnableUpgradeable {
     mapping(address => uint256) public veAssetWeights;
     uint256 public totalWeight;
 
+    event Withdraw(address destination, uint256 amount);
+
     function __veTokenMinter_init(
         address veTokenAddress,
         address liquidityProvider,
@@ -74,5 +76,11 @@ contract veTokenMinter is Initializable, OwnableUpgradeable {
             veToken.safeTransfer(_to, _amount);
             totalSupply += _amount;
         }
+    }
+
+    function withdraw(address _destination, uint256 _amount) external onlyOwner {
+        veToken.safeTransfer(_destination, _amount);
+
+        emit Withdraw(_destination, _amount);
     }
 }
