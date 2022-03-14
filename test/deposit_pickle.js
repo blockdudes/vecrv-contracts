@@ -4,7 +4,7 @@ var contractList = jsonfile.readFileSync("contracts.json");
 
 const PickleDepositor = artifacts.require("PickleDepositor");
 const PcikleVoterProxy = artifacts.require("PickleVoterProxy");
-const vtDillToken = artifacts.require("vtDillToken");
+const ve3DillToken = artifacts.require("ve3DillToken");
 const IExchange = artifacts.require("IExchange");
 const IERC20 = artifacts.require("IERC20");
 const PickleBooster = artifacts.require("PickleBooster");
@@ -30,7 +30,7 @@ contract("Pickle Depositor Test", async (accounts) => {
     //system
     let voteproxy = await PcikleVoterProxy.at(contractList.system.picklevoterProxy);
     let pickleDeposit = await PickleDepositor.at(contractList.system.pickleDepositor);
-    let vtPickle = await vtDillToken.at(contractList.system.vtPickleToken);
+    let vtPickle = await ve3DillToken.at(contractList.system.vtPickleToken);
     let booster = await PickleBooster.at(contractList.system.pickleBooster);
     let vetoken = await veToken.at(contractList.system.vetoken);
 

@@ -24,7 +24,7 @@
         },
         {
           "internalType": "address",
-          "name": "vtDillToken_",
+          "name": "ve3DillToken_",
           "type": "address"
         },
         {
@@ -397,7 +397,7 @@
     },
     {
       "inputs": [],
-      "name": "vtDillToken",
+      "name": "ve3DillToken",
       "outputs": [
         {
           "internalType": "contract IERC20",
