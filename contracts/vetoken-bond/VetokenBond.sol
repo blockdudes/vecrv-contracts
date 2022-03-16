@@ -634,8 +634,8 @@ contract VetokenBond is Ownable {
     uint256 public totalDebt; // total value of outstanding bonds; used for pricing
     uint256 public lastDecay; // reference block for debt decay
 
-    address immutable subsidyRouter; // pays subsidy in OHM to custom treasury
-    uint256 payoutSinceLastSubsidy; // principal accrued since subsidy paid
+    // address immutable subsidyRouter; // pays subsidy in OHM to custom treasury
+    // uint256 payoutSinceLastSubsidy; // principal accrued since subsidy paid
 
     /* ======== STRUCTS ======== */
 
@@ -677,7 +677,7 @@ contract VetokenBond is Ownable {
         address _payoutToken,
         address _principalToken,
         address _vetokenTreasury,
-        address _subsidyRouter,
+        //address _subsidyRouter,
         address _initialOwner,
         address _vetokenDAO,
         uint256[] memory _tierCeilings,
@@ -691,8 +691,8 @@ contract VetokenBond is Ownable {
         principalToken = IERC20(_principalToken);
         require(_vetokenTreasury != address(0));
         vetokenTreasury = _vetokenTreasury;
-        require(_subsidyRouter != address(0));
-        subsidyRouter = _subsidyRouter;
+        // require(_subsidyRouter != address(0));
+        // subsidyRouter = _subsidyRouter;
         require(_initialOwner != address(0));
         policy = _initialOwner;
         require(_vetokenDAO != address(0));
@@ -811,12 +811,12 @@ contract VetokenBond is Ownable {
      *  @notice subsidy controller checks payouts since last subsidy and resets counter
      *  @return payoutSinceLastSubsidy_ uint
      */
-    function paySubsidy() external returns (uint256 payoutSinceLastSubsidy_) {
-        require(msg.sender == subsidyRouter, "Only subsidy controller");
+    // function paySubsidy() external returns (uint256 payoutSinceLastSubsidy_) {
+    //     require(msg.sender == subsidyRouter, "Only subsidy controller");
 
-        payoutSinceLastSubsidy_ = payoutSinceLastSubsidy;
-        payoutSinceLastSubsidy = 0;
-    }
+    //     payoutSinceLastSubsidy_ = payoutSinceLastSubsidy;
+    //     payoutSinceLastSubsidy = 0;
+    // }
 
     /* ======== USER FUNCTIONS ======== */
 
@@ -881,7 +881,7 @@ contract VetokenBond is Ownable {
 
         totalPrincipalBonded = totalPrincipalBonded.add(_amount); // total bonded increased
         totalPayoutGiven = totalPayoutGiven.add(payout); // total payout increased
-        payoutSinceLastSubsidy = payoutSinceLastSubsidy.add(payout); // subsidy counter increased
+        //payoutSinceLastSubsidy = payoutSinceLastSubsidy.add(payout); // subsidy counter increased
 
         adjust(); // control variable is adjusted
         return payout;
