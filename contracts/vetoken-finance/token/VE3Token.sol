@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.7;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract VeToken is ERC20 {
+contract VE3Token is ERC20 {
+    using SafeERC20 for IERC20;
+    using Address for address;
     using SafeMath for uint256;
 
     address public operator;
 
-    uint256 public constant maxSupply = 100 * 1000000 * 1e18; //100mil
-
-    constructor() ERC20("veToken Finance", "VE3D") {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         operator = msg.sender;
     }
 
@@ -22,7 +25,6 @@ contract VeToken is ERC20 {
 
     function mint(address _to, uint256 _amount) external {
         require(msg.sender == operator, "!authorized");
-        require(totalSupply().add(_amount) < maxSupply, "Exceeed max supply!");
 
         _mint(_to, _amount);
     }
