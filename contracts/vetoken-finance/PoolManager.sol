@@ -5,57 +5,63 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "./Interfaces/IPools.sol";
 import "./Interfaces/IRegistry.sol";
 
-contract PoolManager {
+contract PoolManager is Ownable {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
-    address public gaugeProxy;
-    address public operator;
-    address public pools;
+    // pools => gaugeProxy
+    mapping(address => address) public gaugeProxies;
+    EnumerableSet.AddressSet internal operators;
 
-    constructor(address _pools, address _gaugeProxy) {
-        operator = msg.sender;
-        pools = _pools;
-        _gaugeProxy = gaugeProxy;
+    function addOperator(
+        address _newOperator,
+        address pools,
+        address gaugeProxy
+    ) public onlyOwner {
+        operators.add(_newOperator);
+        gaugeProxies[pools] = gaugeProxy;
     }
 
-    function setOperator(address _operator) external {
-        require(msg.sender == operator, "!auth");
-        operator = _operator;
+    function removeOperator(address _operator, address pools) public onlyOwner {
+        operators.remove(_operator);
+        gaugeProxies[pools] = address(0);
     }
 
     //revert control of adding  pools back to operator
-    function revertControl() external {
-        require(msg.sender == operator, "!auth");
-        IPools(pools).setPoolManager(operator);
+    function revertControl(address pools) external {
+        require(operators.contains(_msgSender()), "!auth");
+        IPools(pools).setPoolManager(_msgSender());
     }
 
-    //add a new pickle pool to the system.
-    //gauge must be on pickle's gaugeProxy, thus anyone can call
-    function addPool(address _lptoken) external returns (bool) {
+    //add a new veAsset pool to the system.
+    //gauge must be on veAsset's gaugeProxy, thus anyone can call
+    function addPool(address _lptoken, address _pools) external returns (bool) {
         require(_lptoken != address(0), "lptoken is 0");
 
         //get  gauge by lp token from gauge proxy
-        address _gauge = IRegistry(gaugeProxy).getGauge(_lptoken);
+        address _gauge = IRegistry(gaugeProxies[_pools]).getGauge(_lptoken);
         require(_gauge != address(0), "gauge is 0");
 
-        bool gaugeExists = IPools(pools).gaugeMap(_gauge);
+        bool gaugeExists = IPools(_pools).gaugeMap(_gauge);
         require(!gaugeExists, "already registered");
 
-        IPools(pools).addPool(_lptoken, _gauge);
+        IPools(_pools).addPool(_lptoken, _gauge);
 
         return true;
     }
 
-    function shutdownPool(uint256 _pid) external returns (bool) {
-        require(msg.sender == operator, "!auth");
+    function shutdownPool(address _pools, uint256 _pid) external returns (bool) {
+        require(operators.contains(_msgSender()), "!auth");
 
-        IPools(pools).shutdownPool(_pid);
+        IPools(_pools).shutdownPool(_pid);
         return true;
     }
 }

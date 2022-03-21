@@ -4,13 +4,9 @@ pragma solidity 0.8.7;
 interface IRewardFactory {
     function setAccess(address, bool) external;
 
-    function CreateVeAsssetRewards(uint256, address) external returns (address);
+    function CreateVeAssetRewards(uint256, address) external returns (address);
 
-    function CreateTokenRewards(
-        address,
-        address,
-        address
-    ) external returns (address);
+    function CreateTokenRewards(address, address) external returns (address);
 
     function activeRewardCount(address) external view returns (uint256);
 

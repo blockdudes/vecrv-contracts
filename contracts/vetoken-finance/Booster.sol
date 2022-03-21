@@ -190,16 +190,11 @@ contract Booster {
         address _feeToken = IFeeDistro(feeDistro).token();
         if (feeToken != _feeToken) {
             //create a new reward contract for the new token
-            lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(
-                _feeToken,
-                lockRewards,
-                address(this)
-            );
+            lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(_feeToken, lockRewards);
 
             stakerLockFees = IRewardFactory(rewardFactory).CreateTokenRewards(
                 _feeToken,
-                stakerLockRewards,
-                address(this)
+                stakerLockRewards
             );
             feeToken = _feeToken;
         }
@@ -252,7 +247,7 @@ contract Booster {
         //create a tokenized deposit
         address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken);
         //create a reward contract for veAsset rewards
-        address newRewardPool = IRewardFactory(rewardFactory).CreateVeAsssetRewards(pid, token);
+        address newRewardPool = IRewardFactory(rewardFactory).CreateVeAssetRewards(pid, token);
 
         //add the new pool
         poolInfo.push(

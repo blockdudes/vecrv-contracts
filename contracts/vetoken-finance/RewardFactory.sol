@@ -5,21 +5,30 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./BaseRewardPool.sol";
 import "./VirtualBalanceRewardPool.sol";
 
-contract RewardFactory {
+contract RewardFactory is Ownable {
     using Address for address;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
-    address public veAsset;
-    address public operator;
     mapping(address => bool) private rewardAccess;
     mapping(address => uint256[]) public rewardActiveList;
+    // operator => veAsset token
+    mapping(address => address) public veAssets;
+    EnumerableSet.AddressSet internal operators;
 
-    constructor(address _operator, address _veAsset) {
-        operator = _operator;
-        _veAsset = veAsset;
+    function addOperator(address _newOperator, address _veAsset) public onlyOwner {
+        operators.add(_newOperator);
+        veAssets[_newOperator] = _veAsset;
+    }
+
+    function removeOperator(address _operator) public onlyOwner {
+        operators.remove(_operator);
+        veAssets[_operator] = address(0);
     }
 
     //Get active count function
@@ -68,15 +77,15 @@ contract RewardFactory {
 
     //Create a Managed Reward Pool to handle distribution of all veAsset mined in a pool
     function CreateVeAssetRewards(uint256 _pid, address _depositToken) external returns (address) {
-        require(msg.sender == operator, "!auth");
+        require(operators.contains(_msgSender()), "!auth");
 
         //operator = booster(deposit) contract so that new veAsset can be added and distributed
         //reward manager = this factory so that extra incentive tokens(ex. snx) can be linked to the main managed reward pool
         BaseRewardPool rewardPool = new BaseRewardPool(
             _pid,
             _depositToken,
-            veAsset,
-            operator,
+            veAssets[_msgSender()],
+            _msgSender(),
             address(this)
         );
         return address(rewardPool);
@@ -84,18 +93,14 @@ contract RewardFactory {
 
     //create a virtual balance reward pool that mimicks the balance of a pool's main reward contract
     //used for extra incentive tokens(ex. snx) as well as veVeAsset fees
-    function CreateTokenRewards(
-        address _token,
-        address _mainRewards,
-        address _operator
-    ) external returns (address) {
-        require(msg.sender == operator || rewardAccess[msg.sender] == true, "!auth");
+    function CreateTokenRewards(address _token, address _mainRewards) external returns (address) {
+        require(operators.contains(_msgSender()) || rewardAccess[_msgSender()] == true, "!auth");
 
         //create new pool, use main pool for balance lookup
         VirtualBalanceRewardPool rewardPool = new VirtualBalanceRewardPool(
             _mainRewards,
             _token,
-            _operator
+            _msgSender()
         );
         address rAddress = address(rewardPool);
         //add the new pool to main pool's list of extra rewards, assuming this factory has "reward manager" role
