@@ -23,11 +23,7 @@ contract VeTokenMinter is Ownable {
 
     event Withdraw(address destination, uint256 amount);
 
-    constructor(
-        address veTokenAddress,
-        address liquidityProvider,
-        uint256 _initialDeposit
-    ) {
+    constructor(address veTokenAddress) {
         veToken = ERC20(veTokenAddress);
         totalCliffs = 1000;
         reductionPerCliff = maxSupply.div(totalCliffs);

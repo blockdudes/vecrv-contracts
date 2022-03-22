@@ -5,13 +5,12 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "./Interfaces/IPools.sol";
 import "./Interfaces/IRegistry.sol";
 
-contract PoolManager is Ownable {
+contract PoolManager {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -19,26 +18,33 @@ contract PoolManager is Ownable {
 
     // pools => gaugeProxy
     mapping(address => address) public gaugeProxies;
-    EnumerableSet.AddressSet internal operators;
+    address public operator;
 
-    function addOperator(
-        address _newOperator,
-        address pools,
-        address gaugeProxy
-    ) public onlyOwner {
-        operators.add(_newOperator);
+    constructor() public {
+        operator = msg.sender;
+    }
+
+    function setOperator(address _operator) external {
+        require(msg.sender == operator, "!auth");
+        operator = _operator;
+    }
+
+    function addBooster(address pools, address gaugeProxy) public {
+        require(msg.sender == operator, "!auth");
+
         gaugeProxies[pools] = gaugeProxy;
     }
 
-    function removeOperator(address _operator, address pools) public onlyOwner {
-        operators.remove(_operator);
+    function removeBooster(address pools) public {
+        require(msg.sender == operator, "!auth");
+
         gaugeProxies[pools] = address(0);
     }
 
     //revert control of adding  pools back to operator
     function revertControl(address pools) external {
-        require(operators.contains(_msgSender()), "!auth");
-        IPools(pools).setPoolManager(_msgSender());
+        require(msg.sender == operator, "!auth");
+        IPools(pools).setPoolManager(operator);
     }
 
     //add a new veAsset pool to the system.
@@ -59,7 +65,7 @@ contract PoolManager is Ownable {
     }
 
     function shutdownPool(address _pools, uint256 _pid) external returns (bool) {
-        require(operators.contains(_msgSender()), "!auth");
+        require(msg.sender == operator, "!auth");
 
         IPools(_pools).shutdownPool(_pid);
         return true;

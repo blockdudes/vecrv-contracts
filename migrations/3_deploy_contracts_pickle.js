@@ -11,8 +11,13 @@ const Booster = artifacts.require("Booster");
 const TokenFactory = artifacts.require("TokenFactory");
 const VE3DRewardPool = artifacts.require("VE3DRewardPool");
 const PoolManager = artifacts.require("PoolManager");
-const IERC20 = artifacts.require("IERC20");
 const VeTokenMinter = artifacts.require("VeTokenMinter");
+const IERC20 = artifacts.require("IERC20");
+const BigNumber = require("bignumber.js");
+
+function toBN(number) {
+  return new BigNumber(number);
+}
 
 module.exports = async function (deployer, network, accounts) {
   const pickle = await IERC20.at("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5");
@@ -20,6 +25,7 @@ module.exports = async function (deployer, network, accounts) {
   const voteOwnership = "0xe478de485ad2fe566d49342cbd03e49ed7db3356";
   const voteParameter = "0xBCfF8B0b9419b9A88c44546519b1e909cF330399";
   const vePickle = "0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf";
+  const gaugeProxy = "0x2e57627ACf6c1812F99e274d0ac61B786c19E74f";
   // whitelisted address
   const voterProxyAddress = "0x05A7Ebd3b20A2b0742FdFDe8BA79F6D22Ea9C351";
   const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
@@ -31,12 +37,21 @@ module.exports = async function (deployer, network, accounts) {
   const admin = accounts[0];
 
   web3.eth.sendTransaction({ from: admin, to: voterProxyOwner, value: web3.utils.toWei("10") });
-  web3.eth.sendTransaction({ from: admin, to: vetokenOperator, value: web3.utils.toWei("10") });
 
-  console.log("deploying from: " + admin);
+  const rFactory = await RewardFactory.deployed();
+  addContract("system", "rFactory", rFactory.address);
+
+  const tFactory = await TokenFactory.deployed();
+  addContract("system", "tFactory", tFactory.address);
+
+  const poolManager = await PoolManager.deployed();
+  addContract("system", "poolManager", poolManager.address);
+
+  const vetokenMinter = await VeTokenMinter.deployed();
+  addContract("system", "vetokenMinter", vetokenMinter.address);
 
   // voter proxy
-  const voter = await PcikleVoterProxy.at(voterProxyAddress);
+  const voter = await VoterProxy.at(voterProxyAddress);
 
   // fund admint pickle tokens
   await pickle.transfer(admin, web3.utils.toWei("16000"), { from: pickleUser });
@@ -46,55 +61,68 @@ module.exports = async function (deployer, network, accounts) {
   addContract("system", "pickle", pickle.address);
   addContract("system", "pickleVoterProxy", voter.address);
   addContract("system", "vetoken", veTokenAddress);
-  addContract("system", "vetokenMinter", vetokenMinter.address);
 
   // booster
-  await deployer.deploy(Booster, voter.address, vetokenMinter, pickle.address, feeDistro, voteOwnership, voteParameter);
+  await deployer.deploy(
+    Booster,
+    voter.address,
+    vetokenMinter.address,
+    pickle.address,
+    feeDistro,
+    voteOwnership,
+    voteParameter,
+    {
+      from: admin,
+    }
+  );
   const booster = await Booster.deployed();
   addContract("system", "pickleBooster", booster.address);
   await voter.setOperator(booster.address, { from: voterProxyOwner });
 
   // VE3Token
-  await deployer.deploy(VE3Token, "VeToken Finance DILL", ve3Dill);
+  await deployer.deploy(VE3Token, "VeToken Finance DILL", "ve3Dill");
   const ve3Token = await VE3Token.deployed();
   addContract("system", "ve3Dill", ve3Token.address);
 
   // Depositer
-  await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, veTokenAddress, vePickle);
-  const depositor = await PickleDepositor.deployed();
+  await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, pickle.address, vePickle);
+  const depositor = await VeAssetDepositor.deployed();
   addContract("system", "pickleDepositor", depositor.address);
 
+  // base reward pool for VE3Token
+  await deployer.deploy(BaseRewardPool, 0, ve3Token.address, pickle.address, booster.address, rFactory.address);
+  const ve3TokenRewardPool = await BaseRewardPool.deployed();
+  addContract("system", "VE3TokenRewardPool", ve3TokenRewardPool.address);
+
+  // VE3DRewardPool
+  await deployer.deploy(
+    VE3DRewardPool,
+    veTokenAddress,
+    pickle.address,
+    depositor.address,
+    ve3TokenRewardPool.address,
+    ve3Token.address,
+    booster.address,
+    admin
+  );
+  const ve3dRewardPool = await VE3DRewardPool.deployed();
+  addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
+
+  // configurations
   await ve3Token.setOperator(depositor.address);
+
   await voter.setDepositor(depositor.address, { from: voterProxyOwner });
+
   await depositor.initialLock();
   console.log("initial Lock created on DILL");
 
   await booster.setTreasury(depositor.address);
-
-  // base reward pool for VE3Token
-  await deployer.deploy(BaseRewardPool, 0, ve3Token.address, pickle.address, booster.address, rFactory.address);
-  const VE3TokenRewardPool = await BaseRewardPool.deployed();
-  addContract("system", "VE3TokenRewardPool", VE3TokenRewardPool.address);
-
-  // vetokenRewardPool
-  // await deployer.deploy(
-  //   vetokenRewardPool,
-  //   veTokenAddress,
-  //   pickle.address,
-  //   pickleDepositor.address,
-  //   vtpickleTokenRewards.address,
-  //   vtpickleToken.address,
-  //   booster.address,
-  //   admin
-  // );
-  // const vetokenRewards = await vetokenRewardPool.deployed();
-  // addContract("system", "vetokenRewards", vetokenRewards.address);
-
-  //await booster.setRewardContracts(vtpickleTokenRewards.address, vetokenRewards.address);
-
-  // poolmanager
-
+  await booster.setRewardContracts(ve3TokenRewardPool.address, ve3dRewardPool.address, constants.ZERO_ADDRESS);
   await booster.setPoolManager(poolManager.address);
   await booster.setFactories(rFactory.address, tFactory.address);
-  await booster.setFeeInfo();
+  await booster.setFeeInfo(toBN(10000), toBN(0), { from: admin });
+
+  await poolManager.addBooster(booster.address, gaugeProxy, { from: admin });
+  await rFactory.addOperator(booster.address, pickle.address, { from: admin });
+  await tFactory.addOperator(booster.address, { from: admin });
 };
