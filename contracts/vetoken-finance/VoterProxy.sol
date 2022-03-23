@@ -21,6 +21,7 @@ contract VoterProxy {
     address public immutable veAsset;
     address public immutable escrow;
     address public immutable gaugeProxy;
+    // for curve only
     address public immutable curveMinter;
 
     address public owner;

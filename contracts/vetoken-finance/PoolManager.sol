@@ -47,6 +47,7 @@ contract PoolManager {
         IPools(pools).setPoolManager(operator);
     }
 
+    ///TODO this function need to customize for curve
     //add a new veAsset pool to the system.
     //gauge must be on veAsset's gaugeProxy, thus anyone can call
     function addPool(address _lptoken, address _pools) external returns (bool) {

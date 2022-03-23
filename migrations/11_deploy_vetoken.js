@@ -1,4 +1,4 @@
-const veToken = artifacts.require("veToken");
+const veToken = artifacts.require("VeToken");
 const { constants } = require("@openzeppelin/test-helpers");
 const addContract = require("./helper/addContracts");
 
