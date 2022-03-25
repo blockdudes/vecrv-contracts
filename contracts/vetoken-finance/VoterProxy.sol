@@ -31,6 +31,7 @@ contract VoterProxy {
     IVoteEscrow.EscrowModle public escrowModle;
 
     mapping(address => bool) private protectedTokens;
+    mapping(address => bool) private stashPool;
 
     constructor(
         string memory _nanme,
@@ -74,6 +75,14 @@ contract VoterProxy {
         depositor = _depositor;
     }
 
+    function setStashAccess(address _stash, bool _status) external returns (bool) {
+        require(msg.sender == operator, "!auth");
+        if (_stash != address(0)) {
+            stashPool[_stash] = _status;
+        }
+        return true;
+    }
+
     function deposit(address _token, address _gauge) external returns (bool) {
         require(msg.sender == operator, "!auth");
         if (protectedTokens[_token] == false) {
@@ -89,6 +98,20 @@ contract VoterProxy {
             IGauge(_gauge).deposit(balance);
         }
         return true;
+    }
+
+    //stash only function for pulling extra incentive reward tokens out
+    function withdraw(IERC20 _asset) external returns (uint256 balance) {
+        require(stashPool[msg.sender] == true, "!auth");
+
+        //check protection
+        if (protectedTokens[address(_asset)] == true) {
+            return 0;
+        }
+
+        balance = _asset.balanceOf(address(this));
+        _asset.safeTransfer(msg.sender, balance);
+        return balance;
     }
 
     // Withdraw partial funds

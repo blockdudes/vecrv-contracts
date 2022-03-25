@@ -20,7 +20,7 @@ contract PoolManager {
     mapping(address => address) public gaugeProxies;
     address public operator;
 
-    constructor() public {
+    constructor() {
         operator = msg.sender;
     }
 
@@ -50,7 +50,11 @@ contract PoolManager {
     ///TODO this function need to customize for curve
     //add a new veAsset pool to the system.
     //gauge must be on veAsset's gaugeProxy, thus anyone can call
-    function addPool(address _lptoken, address _pools) external returns (bool) {
+    function addPool(
+        address _lptoken,
+        address _pools,
+        uint256 _stashVersion
+    ) external returns (bool) {
         require(_lptoken != address(0), "lptoken is 0");
 
         //get  gauge by lp token from gauge proxy
@@ -60,7 +64,7 @@ contract PoolManager {
         bool gaugeExists = IPools(_pools).gaugeMap(_gauge);
         require(!gaugeExists, "already registered");
 
-        IPools(_pools).addPool(_lptoken, _gauge);
+        IPools(_pools).addPool(_lptoken, _gauge, _stashVersion);
 
         return true;
     }

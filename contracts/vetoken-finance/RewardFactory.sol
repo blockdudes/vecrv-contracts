@@ -75,6 +75,12 @@ contract RewardFactory is Ownable {
         return true;
     }
 
+    //stash contracts need access to create new Virtual balance pools for extra gauge incentives(ex. snx)
+    function setAccess(address _stash, bool _status) external {
+        require(operators.contains(_msgSender()), "!auth");
+        rewardAccess[_stash] = _status;
+    }
+
     //Create a Managed Reward Pool to handle distribution of all veAsset mined in a pool
     function CreateVeAssetRewards(uint256 _pid, address _depositToken) external returns (address) {
         require(operators.contains(_msgSender()), "!auth");

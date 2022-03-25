@@ -173,9 +173,13 @@ contract Booster {
     ) external {
         require(msg.sender == owner, "!auth");
 
-        if (_rewards != address(0)) lockRewards = _rewards;
-        if (_stakerRewards != address(0)) stakerRewards = _stakerRewards;
-        if (_stakerLockRewards != address(0)) stakerLockRewards = _stakerLockRewards;
+        //reward contracts are immutable or else the owner
+        //has a means to redeploy and mint cvx via rewardClaimed()
+        if (lockRewards == address(0)) {
+            lockRewards = _rewards;
+            stakerRewards = _stakerRewards;
+            stakerLockRewards = _stakerLockRewards;
+        }
 
         emit RewardContractsUpdated(_rewards, _stakerRewards, _stakerLockRewards);
     }
