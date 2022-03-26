@@ -28,6 +28,8 @@ interface IStaker {
 
     function claimFees(address, address) external;
 
+    function setStashAccess(address, bool) external;
+
     function vote(
         uint256,
         address,

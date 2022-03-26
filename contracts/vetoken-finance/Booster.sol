@@ -12,6 +12,8 @@ import "./Interfaces/ITokenFactory.sol";
 import "./Interfaces/IStaker.sol";
 import "./Interfaces/IRewards.sol";
 import "./Interfaces/ITokenMinter.sol";
+import "./Interfaces/IStash.sol";
+import "./Interfaces/IStashFactory.sol";
 
 contract Booster {
     using SafeERC20 for IERC20;
@@ -44,6 +46,7 @@ contract Booster {
     address public immutable voteOwnership;
     address public immutable voteParameter;
     address public rewardFactory;
+    address public stashFactory;
     address public tokenFactory;
     address public rewardArbitrator;
     address public voteDelegate;
@@ -62,6 +65,7 @@ contract Booster {
         address token;
         address gauge;
         address veAssetRewards;
+        address stash;
         bool shutdown;
     }
 
@@ -141,7 +145,11 @@ contract Booster {
         emit PoolManagerUpdated(_poolM);
     }
 
-    function setFactories(address _rfactory, address _tfactory) external {
+    function setFactories(
+        address _rfactory,
+        address _sfactory,
+        address _tfactory
+    ) external {
         require(msg.sender == owner, "!auth");
 
         //reward factory only allow this to be called once even if owner
@@ -152,6 +160,10 @@ contract Booster {
             tokenFactory = _tfactory;
             emit FactoriesUpdated(_rfactory, _tfactory);
         }
+
+        //stash factory should be considered more safe to change
+        //updating may be required to handle new types of gauges
+        stashFactory = _sfactory;
     }
 
     function setArbitrator(address _arb) external {
@@ -241,7 +253,11 @@ contract Booster {
     }
 
     //create a new pool
-    function addPool(address _lptoken, address _gauge) external returns (bool) {
+    function addPool(
+        address _lptoken,
+        address _gauge,
+        uint256 _stashVersion
+    ) external returns (bool) {
         require(msg.sender == poolManager && !isShutdown, "!add");
         require(_gauge != address(0) && _lptoken != address(0), "!param");
 
@@ -252,6 +268,13 @@ contract Booster {
         address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken);
         //create a reward contract for veAsset rewards
         address newRewardPool = IRewardFactory(rewardFactory).CreateVeAssetRewards(pid, token);
+        //create a stash to handle extra incentives
+        address stash = IStashFactory(stashFactory).CreateStash(
+            pid,
+            _gauge,
+            staker,
+            _stashVersion
+        );
 
         //add the new pool
         poolInfo.push(
@@ -260,10 +283,20 @@ contract Booster {
                 token: token,
                 gauge: _gauge,
                 veAssetRewards: newRewardPool,
+                stash: stash,
                 shutdown: false
             })
         );
         gaugeMap[_gauge] = true;
+
+        //give stashes access to rewardfactory and voteproxy
+        //   voteproxy so it can grab the incentive tokens off the contract after claiming rewards
+        //   reward factory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
+        if (stash != address(0)) {
+            poolInfo[pid].stash = stash;
+            IStaker(staker).setStashAccess(stash, true);
+            IRewardFactory(rewardFactory).setAccess(stash, true);
+        }
         emit PoolAdded(_lptoken, _gauge, token, newRewardPool);
 
         return true;
@@ -325,6 +358,12 @@ contract Booster {
         require(gauge != address(0), "!gauge setting");
         IStaker(staker).deposit(lptoken, gauge);
 
+        //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
+        address stash = pool.stash;
+        if (stash != address(0)) {
+            IStash(stash).stashRewards();
+        }
+
         address token = pool.token;
         if (_stake) {
             //mint here and send to rewards on user behalf
@@ -368,6 +407,13 @@ contract Booster {
         // if shutdown tokens will be in this contract
         if (!pool.shutdown) {
             IStaker(staker).withdraw(lptoken, gauge, _amount);
+        }
+
+        //some gauges claim rewards when withdrawing, stash them in a seperate contract until next claim
+        //do not call if shutdown since stashes wont have access
+        address stash = pool.stash;
+        if (stash != address(0) && !isShutdown && !pool.shutdown) {
+            IStash(stash).stashRewards();
         }
 
         //return lp tokens
@@ -429,6 +475,26 @@ contract Booster {
         return true;
     }
 
+    function claimRewards(uint256 _pid, address _gauge) external returns (bool) {
+        address stash = poolInfo[_pid].stash;
+        require(msg.sender == stash, "!auth");
+
+        IStaker(staker).claimRewards(_gauge);
+        return true;
+    }
+
+    function setGaugeRedirect(uint256 _pid) external returns (bool) {
+        address stash = poolInfo[_pid].stash;
+        require(msg.sender == stash, "!auth");
+        address gauge = poolInfo[_pid].gauge;
+        bytes memory data = abi.encodeWithSelector(
+            bytes4(keccak256("set_rewards_receiver(address)")),
+            stash
+        );
+        IStaker(staker).execute(gauge, uint256(0), data);
+        return true;
+    }
+
     //claim veAsset and extra rewards and disperse to reward contracts
     function _earmarkRewards(uint256 _pid) internal {
         PoolInfo storage pool = poolInfo[_pid];
@@ -438,6 +504,15 @@ contract Booster {
 
         //claim veAsset
         IStaker(staker).claimVeAsset(gauge);
+
+        //check if there are extra rewards
+        address stash = pool.stash;
+        if (stash != address(0)) {
+            //claim extra rewards
+            IStash(stash).claimRewards();
+            //process extra rewards
+            IStash(stash).processStash();
+        }
 
         //veAsset balance
         uint256 veAssetBal = IERC20(veAsset).balanceOf(address(this));

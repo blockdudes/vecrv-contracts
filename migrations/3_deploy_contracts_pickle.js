@@ -8,6 +8,7 @@ const VeAssetDepositor = artifacts.require("VeAssetDepositor");
 const BaseRewardPool = artifacts.require("BaseRewardPool");
 const Booster = artifacts.require("Booster");
 const TokenFactory = artifacts.require("TokenFactory");
+const StashFactory = artifacts.require("StashFactory");
 const VE3DRewardPool = artifacts.require("VE3DRewardPool");
 const PoolManager = artifacts.require("PoolManager");
 const VeTokenMinter = artifacts.require("VeTokenMinter");
@@ -43,6 +44,9 @@ module.exports = async function (deployer, network, accounts) {
 
   const tFactory = await TokenFactory.deployed();
   addContract("system", "tFactory", tFactory.address);
+
+  const sFactory = await StashFactory.deployed();
+  addContract("system", "sFactory", sFactory.address);
 
   const poolManager = await PoolManager.deployed();
   addContract("system", "poolManager", poolManager.address);
@@ -116,11 +120,12 @@ module.exports = async function (deployer, network, accounts) {
   await poolManager.addBooster(booster.address, gaugeProxy);
   await rFactory.addOperator(booster.address, pickle.address);
   await tFactory.addOperator(booster.address);
+  await sFactory.addOperator(booster.address);
 
   await booster.setTreasury(depositor.address);
   /// TODO add xVE3D token pool
   await booster.setRewardContracts(ve3TokenRewardPool.address, ve3dRewardPool.address, ve3dRewardPool.address);
   await booster.setPoolManager(poolManager.address);
-  await booster.setFactories(rFactory.address, tFactory.address);
+  await booster.setFactories(rFactory.address, sFactory.address, tFactory.address);
   await booster.setFeeInfo(toBN(10000), toBN(0));
 };

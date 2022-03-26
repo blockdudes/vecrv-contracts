@@ -1,5 +1,6 @@
 const RewardFactory = artifacts.require("RewardFactory");
 const TokenFactory = artifacts.require("TokenFactory");
+const StashFactory = artifacts.require("StashFactory");
 const VeTokenMinter = artifacts.require("VeTokenMinter");
 const PoolManager = artifacts.require("PoolManager");
 const VeToken = artifacts.require("VeToken");
@@ -19,15 +20,16 @@ module.exports = async function (deployer, network, accounts) {
   // reward factory
   await deployer.deploy(RewardFactory);
   const rFactory = await RewardFactory.deployed();
-  //addContract("system", "rFactory", rFactory.address);
 
   // token factory
   await deployer.deploy(TokenFactory);
-  const tFactory = await TokenFactory.deployed();
-  //addContract("system", "tFactory", tFactory.address);
+  //const tFactory = await TokenFactory.deployed();
+
+  //stash factory
+  await deployer.deploy(StashFactory, rFactory.address);
+  //const sFactory = await StashFactory.deployed();
 
   // pool manager
   await deployer.deploy(PoolManager);
-  const poolManager = await PoolManager.deployed();
-  //addContract("system", "poolManager", poolManager.address);
+  //const poolManager = await PoolManager.deployed();
 };

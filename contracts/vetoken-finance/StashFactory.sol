@@ -5,24 +5,34 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./ExtraRewardStashV1.sol";
 import "./ExtraRewardStashV2.sol";
 import "./ExtraRewardStashV3.sol";
 
-contract StashFactory {
+contract StashFactory is Ownable {
     using Address for address;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     bytes4 private constant rewarded_token = 0x16fa50b1; //rewarded_token()
     bytes4 private constant reward_tokens = 0x54c49fe9; //reward_tokens(uint256)
     bytes4 private constant rewards_receiver = 0x01ddabf1; //rewards_receiver(address)
 
-    address public operator;
     address public rewardFactory;
+    EnumerableSet.AddressSet internal operators;
 
-    constructor(address _operator, address _rewardFactory) {
-        operator = _operator;
+    constructor(address _rewardFactory) {
         rewardFactory = _rewardFactory;
+    }
+
+    function addOperator(address _newOperator) public onlyOwner {
+        operators.add(_newOperator);
+    }
+
+    function removeOperator(address _operator) public onlyOwner {
+        operators.remove(_operator);
     }
 
     //Create a stash contract for the given gauge.
@@ -33,7 +43,9 @@ contract StashFactory {
         address _staker,
         uint256 _stashVersion
     ) external returns (address) {
-        require(msg.sender == operator, "!authorized");
+        address operator = _msgSender();
+
+        require(operators.contains(operator), "!authorized");
 
         if (_stashVersion == uint256(3) && IsV3(_gauge)) {
             //v3
