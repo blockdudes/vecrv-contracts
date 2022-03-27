@@ -44,61 +44,79 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./Interfaces/IVeAssetDeposit.sol";
 import "./Interfaces/IRewards.sol";
 
-contract VE3DRewardPool {
+contract VE3DRewardPool is Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
-    IERC20 public immutable rewardToken;
     IERC20 public immutable stakingToken;
     uint256 public constant duration = 7 days;
     uint256 public constant FEE_DENOMINATOR = 10000;
 
-    address public immutable operator;
-    address public immutable veAssetDeposits;
-    address public immutable ve3TokenRewards;
-    IERC20 public immutable ve3Token;
     address public immutable rewardManager;
 
-    uint256 public periodFinish = 0;
-    uint256 public rewardRate = 0;
-    uint256 public lastUpdateTime;
-    uint256 public rewardPerTokenStored;
-    uint256 public queuedRewards = 0;
-    uint256 public currentRewards = 0;
-    uint256 public historicalRewards = 0;
     uint256 public constant newRewardRatio = 830;
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
-    mapping(address => uint256) public userRewardPerTokenPaid;
-    mapping(address => uint256) public rewards;
+
+    // reward token => reward token info
+    mapping(address => RewardTokenInfo) public rewardTokenInfo;
+    // list of reward tokens
+    EnumerableSet.AddressSet internal rewardTokens;
+    EnumerableSet.AddressSet internal operators;
 
     address[] public extraRewards;
+
+    struct RewardTokenInfo {
+        address veAssetDeposits;
+        address ve3TokenRewards;
+        address ve3Token;
+        uint256 queuedRewards;
+        uint256 rewardRate;
+        uint256 historicalRewards;
+        uint256 rewardPerTokenStored;
+        uint256 currentRewards;
+        uint256 periodFinish;
+        uint256 lastUpdateTime;
+        mapping(address => uint256) userRewardPerTokenPaid;
+        mapping(address => uint256) rewards;
+    }
 
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
-    constructor(
-        address stakingToken_,
-        address rewardToken_,
-        address veAssetDeposits_,
-        address ve3TokenRewards_,
-        address ve3Token_,
-        address operator_,
-        address rewardManager_
-    ) {
+    constructor(address stakingToken_, address rewardManager_) {
         stakingToken = IERC20(stakingToken_);
-        rewardToken = IERC20(rewardToken_);
-        operator = operator_;
+
         rewardManager = rewardManager_;
-        veAssetDeposits = veAssetDeposits_;
-        ve3TokenRewards = ve3TokenRewards_;
-        ve3Token = IERC20(ve3Token_);
+    }
+
+    function addRewardToken(
+        address _rewardToken,
+        address _veAssetDeposits,
+        address _ve3TokenRewards,
+        address _ve3Token
+    ) external onlyOwner {
+        rewardTokenInfo[_rewardToken].veAssetDeposits = _veAssetDeposits;
+        rewardTokenInfo[_rewardToken].ve3TokenRewards = _ve3TokenRewards;
+        rewardTokenInfo[_rewardToken].ve3Token = _ve3Token;
+        rewardTokens.add(_rewardToken);
+    }
+
+    function addOperator(address _newOperator) public onlyOwner {
+        operators.add(_newOperator);
+    }
+
+    function removeOperator(address _operator) public onlyOwner {
+        operators.remove(_operator);
     }
 
     function totalSupply() public view returns (uint256) {
@@ -126,44 +144,61 @@ contract VE3DRewardPool {
     }
 
     modifier updateReward(address account) {
-        rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = lastTimeRewardApplicable();
-        if (account != address(0)) {
-            rewards[account] = earnedReward(account);
-            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+        address _rewardToken;
+        for (uint256 i = 0; i < rewardTokens.length(); i++) {
+            _rewardToken = rewardTokens.at(i);
+            rewardTokenInfo[_rewardToken].rewardPerTokenStored = rewardPerToken(_rewardToken);
+            rewardTokenInfo[_rewardToken].lastUpdateTime = lastTimeRewardApplicable(_rewardToken);
+            if (account != address(0)) {
+                rewardTokenInfo[_rewardToken].rewards[account] = earnedReward(
+                    _rewardToken,
+                    account
+                );
+                rewardTokenInfo[_rewardToken].userRewardPerTokenPaid[account] = rewardTokenInfo[
+                    _rewardToken
+                ].rewardPerTokenStored;
+            }
         }
+
         _;
     }
 
-    function lastTimeRewardApplicable() public view returns (uint256) {
-        return Math.min(block.timestamp, periodFinish);
+    function lastTimeRewardApplicable(address _rewardToken) public view returns (uint256) {
+        return Math.min(block.timestamp, rewardTokenInfo[_rewardToken].periodFinish);
     }
 
-    function rewardPerToken() public view returns (uint256) {
+    function rewardPerToken(address _rewardToken) public view returns (uint256) {
         uint256 supply = totalSupply();
         if (supply == 0) {
-            return rewardPerTokenStored;
+            return rewardTokenInfo[_rewardToken].rewardPerTokenStored;
         }
         return
-            rewardPerTokenStored.add(
-                lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(
-                    supply
-                )
+            rewardTokenInfo[_rewardToken].rewardPerTokenStored.add(
+                lastTimeRewardApplicable(_rewardToken)
+                    .sub(rewardTokenInfo[_rewardToken].lastUpdateTime)
+                    .mul(rewardTokenInfo[_rewardToken].rewardRate)
+                    .mul(1e18)
+                    .div(supply)
             );
     }
 
-    function earnedReward(address account) internal view returns (uint256) {
+    function earnedReward(address _rewardToken, address account) internal view returns (uint256) {
         return
             balanceOf(account)
-                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
+                .mul(
+                    rewardPerToken(_rewardToken).sub(
+                        rewardTokenInfo[_rewardToken].userRewardPerTokenPaid[account]
+                    )
+                )
                 .div(1e18)
-                .add(rewards[account]);
+                .add(rewardTokenInfo[_rewardToken].rewards[account]);
     }
 
-    function earned(address account) external view returns (uint256) {
-        uint256 depositFeeRate = IVeAssetDeposit(veAssetDeposits).lockIncentive();
+    function earned(address _rewardToken, address account) external view returns (uint256) {
+        uint256 depositFeeRate = IVeAssetDeposit(rewardTokenInfo[_rewardToken].veAssetDeposits)
+            .lockIncentive();
 
-        uint256 r = earnedReward(account);
+        uint256 r = earnedReward(_rewardToken, account);
         uint256 fees = r.mul(depositFeeRate).div(FEE_DENOMINATOR);
 
         //fees dont apply until whitelist+veVeAsset lock begins so will report
@@ -242,22 +277,47 @@ contract VE3DRewardPool {
         bool _claimExtras,
         bool _stake
     ) public updateReward(_account) {
-        uint256 reward = earnedReward(_account);
-        if (reward > 0) {
-            rewards[_account] = 0;
-            rewardToken.safeApprove(veAssetDeposits, 0);
-            rewardToken.safeApprove(veAssetDeposits, reward);
-            IVeAssetDeposit(veAssetDeposits).deposit(reward, false);
+        address _rewardToken;
+        for (uint256 i = 0; i < rewardTokens.length(); i++) {
+            _rewardToken = rewardTokens.at(i);
 
-            uint256 ve3TokenBalance = ve3Token.balanceOf(address(this));
-            if (_stake) {
-                IERC20(ve3Token).safeApprove(ve3TokenRewards, 0);
-                IERC20(ve3Token).safeApprove(ve3TokenRewards, ve3TokenBalance);
-                IRewards(ve3TokenRewards).stakeFor(_account, ve3TokenBalance);
-            } else {
-                ve3Token.safeTransfer(_account, ve3TokenBalance);
+            uint256 reward = earnedReward(_rewardToken, _account);
+            if (reward > 0) {
+                rewardTokenInfo[_rewardToken].rewards[_account] = 0;
+                IERC20(_rewardToken).safeApprove(rewardTokenInfo[_rewardToken].veAssetDeposits, 0);
+                IERC20(_rewardToken).safeApprove(
+                    rewardTokenInfo[_rewardToken].veAssetDeposits,
+                    reward
+                );
+                IVeAssetDeposit(rewardTokenInfo[_rewardToken].veAssetDeposits).deposit(
+                    reward,
+                    false
+                );
+
+                uint256 ve3TokenBalance = IERC20(rewardTokenInfo[_rewardToken].ve3Token).balanceOf(
+                    address(this)
+                );
+                if (_stake) {
+                    IERC20(rewardTokenInfo[_rewardToken].ve3Token).safeApprove(
+                        rewardTokenInfo[_rewardToken].ve3TokenRewards,
+                        0
+                    );
+                    IERC20(rewardTokenInfo[_rewardToken].ve3Token).safeApprove(
+                        rewardTokenInfo[_rewardToken].ve3TokenRewards,
+                        ve3TokenBalance
+                    );
+                    IRewards(rewardTokenInfo[_rewardToken].ve3TokenRewards).stakeFor(
+                        _account,
+                        ve3TokenBalance
+                    );
+                } else {
+                    IERC20(rewardTokenInfo[_rewardToken].ve3Token).safeTransfer(
+                        _account,
+                        ve3TokenBalance
+                    );
+                }
+                emit RewardPaid(_account, ve3TokenBalance);
             }
-            emit RewardPaid(_account, ve3TokenBalance);
         }
 
         //also get rewards from linked rewards
@@ -273,48 +333,53 @@ contract VE3DRewardPool {
         getReward(msg.sender, true, _stake);
     }
 
-    function donate(uint256 _amount) external returns (bool) {
-        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
-        queuedRewards = queuedRewards.add(_amount);
+    function donate(address _rewardToken, uint256 _amount) external returns (bool) {
+        IERC20(_rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+        rewardTokenInfo[_rewardToken].queuedRewards += _amount;
     }
 
-    function queueNewRewards(uint256 _rewards) external {
-        require(msg.sender == operator, "!authorized");
+    function queueNewRewards(address _rewardToken, uint256 _rewards) external {
+        require(operators.contains(_msgSender()), "!authorized");
 
-        _rewards = _rewards.add(queuedRewards);
+        _rewards = _rewards.add(rewardTokenInfo[_rewardToken].queuedRewards);
 
-        if (block.timestamp >= periodFinish) {
-            notifyRewardAmount(_rewards);
-            queuedRewards = 0;
+        if (block.timestamp >= rewardTokenInfo[_rewardToken].periodFinish) {
+            notifyRewardAmount(_rewardToken, _rewards);
+            rewardTokenInfo[_rewardToken].queuedRewards = 0;
             return;
         }
 
         //et = now - (finish-duration)
-        uint256 elapsedTime = block.timestamp.sub(periodFinish.sub(duration));
+        uint256 elapsedTime = block.timestamp.sub(
+            rewardTokenInfo[_rewardToken].periodFinish.sub(duration)
+        );
         //current at now: rewardRate * elapsedTime
-        uint256 currentAtNow = rewardRate * elapsedTime;
+        uint256 currentAtNow = rewardTokenInfo[_rewardToken].rewardRate * elapsedTime;
         uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
         if (queuedRatio < newRewardRatio) {
-            notifyRewardAmount(_rewards);
-            queuedRewards = 0;
+            notifyRewardAmount(_rewardToken, _rewards);
+            rewardTokenInfo[_rewardToken].queuedRewards = 0;
         } else {
-            queuedRewards = _rewards;
+            rewardTokenInfo[_rewardToken].queuedRewards = _rewards;
         }
     }
 
-    function notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {
-        historicalRewards = historicalRewards.add(reward);
-        if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(duration);
+    function notifyRewardAmount(address _rewardToken, uint256 reward)
+        internal
+        updateReward(address(0))
+    {
+        rewardTokenInfo[_rewardToken].historicalRewards += reward;
+        if (block.timestamp >= rewardTokenInfo[_rewardToken].periodFinish) {
+            rewardTokenInfo[_rewardToken].rewardRate = reward.div(duration);
         } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
+            uint256 remaining = rewardTokenInfo[_rewardToken].periodFinish.sub(block.timestamp);
+            uint256 leftover = remaining.mul(rewardTokenInfo[_rewardToken].rewardRate);
             reward = reward.add(leftover);
-            rewardRate = reward.div(duration);
+            rewardTokenInfo[_rewardToken].rewardRate = reward.div(duration);
         }
-        currentRewards = reward;
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(duration);
+        rewardTokenInfo[_rewardToken].currentRewards = reward;
+        rewardTokenInfo[_rewardToken].lastUpdateTime = block.timestamp;
+        rewardTokenInfo[_rewardToken].periodFinish = block.timestamp.add(duration);
         emit RewardAdded(reward);
     }
 }

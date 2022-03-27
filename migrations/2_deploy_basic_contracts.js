@@ -4,6 +4,7 @@ const StashFactory = artifacts.require("StashFactory");
 const VeTokenMinter = artifacts.require("VeTokenMinter");
 const PoolManager = artifacts.require("PoolManager");
 const VeToken = artifacts.require("VeToken");
+const VE3DRewardPool = artifacts.require("VE3DRewardPool");
 
 module.exports = async function (deployer, network, accounts) {
   const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
@@ -32,4 +33,8 @@ module.exports = async function (deployer, network, accounts) {
   // pool manager
   await deployer.deploy(PoolManager);
   //const poolManager = await PoolManager.deployed();
+
+  // VE3DRewardPool
+  await deployer.deploy(VE3DRewardPool, veTokenAddress, rFactory.address);
+  //const ve3dRewardPool = await VE3DRewardPool.deployed();
 };

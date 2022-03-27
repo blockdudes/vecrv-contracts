@@ -14,6 +14,8 @@ interface IRewards {
 
     function queueNewRewards(uint256) external;
 
+    function queueNewRewards(address, uint256) external;
+
     function notifyRewardAmount(uint256) external;
 
     function addExtraReward(address) external;

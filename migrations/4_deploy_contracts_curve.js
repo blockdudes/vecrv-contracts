@@ -38,8 +38,8 @@ module.exports = async function (deployer, network, accounts) {
 
   let admin = accounts[0];
 
-  web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("10") });
-  web3.eth.sendTransaction({ from: admin, to: crvUser, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: crvUser, value: web3.utils.toWei("10") });
 
   const rFactory = await RewardFactory.deployed();
   addContract("system", "rFactory", rFactory.address);
@@ -55,6 +55,9 @@ module.exports = async function (deployer, network, accounts) {
 
   const vetokenMinter = await VeTokenMinter.deployed();
   addContract("system", "vetokenMinter", vetokenMinter.address);
+
+  const ve3dRewardPool = await VE3DRewardPool.deployed();
+  addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
 
   // voter proxy
   await deployer.deploy(VoterProxy, "CurveVoterProxy", crv.address, veCRV, gaugeController, curveMintr, 0);
@@ -102,20 +105,6 @@ module.exports = async function (deployer, network, accounts) {
   const ve3TokenRewardPool = await BaseRewardPool.deployed();
   addContract("system", "ve3TokenRewardPool", ve3TokenRewardPool.address);
 
-  // VE3DRewardPool
-  await deployer.deploy(
-    VE3DRewardPool,
-    veTokenAddress,
-    crv.address,
-    depositor.address,
-    ve3TokenRewardPool.address,
-    ve3Token.address,
-    booster.address,
-    rFactory.address
-  );
-  const ve3dRewardPool = await VE3DRewardPool.deployed();
-  addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
-
   // configurations
   await ve3Token.setOperator(depositor.address);
 
@@ -128,6 +117,9 @@ module.exports = async function (deployer, network, accounts) {
   await rFactory.addOperator(booster.address, crv.address);
   await tFactory.addOperator(booster.address);
   await sFactory.addOperator(booster.address);
+  await ve3dRewardPool.addOperator(booster.address);
+  //add rewardToken to the pool
+  await ve3dRewardPool.addRewardToken(crv.address, depositor.address, ve3TokenRewardPool.address, ve3Token.address);
 
   await booster.setTreasury(depositor.address);
   /// TODO add xVE3D token pool

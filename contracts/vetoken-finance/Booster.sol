@@ -558,7 +558,7 @@ contract Booster {
             //send stakers's share of veAsset to reward contract
             if (_stakerIncentive > 0) {
                 IERC20(veAsset).safeTransfer(stakerRewards, _stakerIncentive);
-                IRewards(stakerRewards).queueNewRewards(_stakerIncentive);
+                IRewards(stakerRewards).queueNewRewards(veAsset, _stakerIncentive);
             }
 
             //send stakers's lock share of veAsset to reward contract
