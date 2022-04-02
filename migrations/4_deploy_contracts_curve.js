@@ -1,6 +1,5 @@
 const { ether, balance, constants, time } = require("@openzeppelin/test-helpers");
 const { addContract } = require("./helper/addContracts");
-const { logTransaction } = require("./helper/logger.js");
 
 const VoterProxy = artifacts.require("VoterProxy");
 const RewardFactory = artifacts.require("RewardFactory");
@@ -14,6 +13,7 @@ const VE3DRewardPool = artifacts.require("VE3DRewardPool");
 const PoolManager = artifacts.require("PoolManager");
 const VeTokenMinter = artifacts.require("VeTokenMinter");
 const IERC20 = artifacts.require("IERC20");
+const SmartWalletWhitelist = artifacts.require("SmartWalletWhitelist");
 const BigNumber = require("bignumber.js");
 
 function toBN(number) {
@@ -21,24 +21,25 @@ function toBN(number) {
 }
 
 module.exports = async function (deployer, network, accounts) {
-  const pickle = await IERC20.at("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5");
-  const feeDistro = "0x74C6CadE3eF61d64dcc9b97490d9FbB231e4BdCc";
-  ///TODO change to pickle addresses
-  const voteOwnership = "0xe478de485ad2fe566d49342cbd03e49ed7db3356";
+  let smartWalletWhitelistAddress = "0xca719728Ef172d0961768581fdF35CB116e0B7a4";
+  let crv = await IERC20.at("0xD533a949740bb3306d119CC777fa900bA034cd52");
+  let checkerAdmin = "0x40907540d8a6c65c637785e8f8b742ae6b0b9968";
+  const feeDistro = "0xa464e6dcda8ac41e03616f95f4bc98a13b8922dc";
+  const voteOwnership = "0xE478de485ad2fe566d49342Cbd03E49ed7DB3356";
   const voteParameter = "0xBCfF8B0b9419b9A88c44546519b1e909cF330399";
-  const vePickle = "0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf";
-  const gaugeProxy = "0x2e57627ACf6c1812F99e274d0ac61B786c19E74f";
-  // whitelisted address
-  const voterProxyAddress = "0x05A7Ebd3b20A2b0742FdFDe8BA79F6D22Ea9C351";
+  const veCRV = "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2";
+  ///TODO check the address
+  const gaugeProxy = "0x90e00ace148ca3b23ac1bc8c240c2a7dd9c2d7f5";
+  ///TODO check the address
+  const gaugeController = "0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB";
+  const curveMintr = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0";
+  const crvUser = "0x7a16fF8270133F063aAb6C9977183D9e72835428";
   const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
-  const voterProxyOwner = "0x30a8609c9d3f4a9ee8ebd556388c6d8479af77d1";
-  const vetokenOperator = "0xa2a379a34cc30c69ab5597bb1c4b6c5c8b23d87e";
-  // user has pickle balance in his wallet
-  const pickleUser = "0xF8dB00cDdEEDd6BEA28dfF88F6BFb1B531A6cBc9";
-  //deployer account
-  const admin = accounts[0];
 
-  await web3.eth.sendTransaction({ from: admin, to: voterProxyOwner, value: web3.utils.toWei("10") });
+  let admin = accounts[0];
+
+  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: crvUser, value: web3.utils.toWei("10") });
 
   const rFactory = await RewardFactory.deployed();
   addContract("system", "rFactory", rFactory.address);
@@ -59,15 +60,20 @@ module.exports = async function (deployer, network, accounts) {
   addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
 
   // voter proxy
-  const voter = await VoterProxy.at(voterProxyAddress);
+  await deployer.deploy(VoterProxy, "CurveVoterProxy", crv.address, veCRV, gaugeController, curveMintr, 0);
+  const voter = await VoterProxy.deployed();
+  // whitelist the voter proxy
+  const whitelist = await SmartWalletWhitelist.at(smartWalletWhitelistAddress);
+  await whitelist.approveWallet(voter.address, { from: checkerAdmin });
+  console.log("witelisted is ", await whitelist.check(voter.address));
 
-  // fund admint pickle tokens
-  await pickle.transfer(admin, web3.utils.toWei("16000"), { from: pickleUser });
-  // fund voter proxy pickle token
-  await pickle.transfer(voter.address, web3.utils.toWei("1000"), { from: admin });
-
-  addContract("system", "pickle", pickle.address);
-  addContract("system", "pickleVoterProxy", voter.address);
+  // fund admint crv tokens
+  await crv.transfer(admin, web3.utils.toWei("100000"), { from: crvUser });
+  // fund voter proxy crv token
+  await crv.transfer(voter.address, web3.utils.toWei("10000"), { from: admin });
+  // vetoken
+  addContract("system", "crv", crv.address);
+  addContract("system", "curveVoterProxy", voter.address);
   addContract("system", "vetoken", veTokenAddress);
 
   // booster
@@ -75,45 +81,45 @@ module.exports = async function (deployer, network, accounts) {
     Booster,
     voter.address,
     vetokenMinter.address,
-    pickle.address,
+    crv.address,
     feeDistro,
     voteOwnership,
     voteParameter
   );
   const booster = await Booster.deployed();
-  addContract("system", "pickleBooster", booster.address);
-  await voter.setOperator(booster.address, { from: voterProxyOwner });
+  addContract("system", "curveBooster", booster.address);
+  await voter.setOperator(booster.address);
 
   // VE3Token
-  await deployer.deploy(VE3Token, "VeToken Finance DILL", "ve3Dill");
+  await deployer.deploy(VE3Token, "VeToken Finance veCRV", "ve3CRV");
   const ve3Token = await VE3Token.deployed();
-  addContract("system", "ve3Dill", ve3Token.address);
+  addContract("system", "ve3CRV", ve3Token.address);
 
   // Depositer
-  await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, pickle.address, vePickle);
+  await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, crv.address, veCRV);
   const depositor = await VeAssetDepositor.deployed();
-  addContract("system", "pickleDepositor", depositor.address);
+  addContract("system", "curveDepositor", depositor.address);
 
   // base reward pool for VE3Token
-  await deployer.deploy(BaseRewardPool, 0, ve3Token.address, pickle.address, booster.address, rFactory.address);
+  await deployer.deploy(BaseRewardPool, 0, ve3Token.address, crv.address, booster.address, rFactory.address);
   const ve3TokenRewardPool = await BaseRewardPool.deployed();
   addContract("system", "ve3TokenRewardPool", ve3TokenRewardPool.address);
 
   // configurations
   await ve3Token.setOperator(depositor.address);
 
-  await voter.setDepositor(depositor.address, { from: voterProxyOwner });
+  await voter.setDepositor(depositor.address);
 
   await depositor.initialLock();
-  console.log("initial Lock created on DILL");
+  console.log("initial Lock created on veCRV");
 
   await poolManager.addBooster(booster.address, gaugeProxy);
-  await rFactory.addOperator(booster.address, pickle.address);
+  await rFactory.addOperator(booster.address, crv.address);
   await tFactory.addOperator(booster.address);
   await sFactory.addOperator(booster.address);
   await ve3dRewardPool.addOperator(booster.address);
   //add rewardToken to the pool
-  await ve3dRewardPool.addRewardToken(pickle.address, depositor.address, ve3TokenRewardPool.address, ve3Token.address);
+  await ve3dRewardPool.addRewardToken(crv.address, depositor.address, ve3TokenRewardPool.address, ve3Token.address);
 
   await booster.setTreasury(depositor.address);
   /// TODO add xVE3D token pool
