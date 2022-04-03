@@ -62,9 +62,12 @@ module.exports = async function (deployer, network, accounts) {
   const voter = await VoterProxy.at(voterProxyAddress);
 
   // fund admint pickle tokens
-  await pickle.transfer(admin, web3.utils.toWei("16000"), { from: pickleUser });
+  logTransaction(await pickle.transfer(admin, web3.utils.toWei("16000"), { from: pickleUser }), "fund pickls to admin");
   // fund voter proxy pickle token
-  await pickle.transfer(voter.address, web3.utils.toWei("1000"), { from: admin });
+  logTransaction(
+    await pickle.transfer(voter.address, web3.utils.toWei("1000"), { from: admin }),
+    "fund pickle to voter proxy"
+  );
 
   addContract("system", "pickle", pickle.address);
   addContract("system", "pickleVoterProxy", voter.address);
@@ -82,7 +85,7 @@ module.exports = async function (deployer, network, accounts) {
   );
   const booster = await Booster.deployed();
   addContract("system", "pickleBooster", booster.address);
-  await voter.setOperator(booster.address, { from: voterProxyOwner });
+  logTransaction(await voter.setOperator(booster.address, { from: voterProxyOwner }), "voter setOperator");
 
   // VE3Token
   await deployer.deploy(VE3Token, "VeToken Finance DILL", "ve3Dill");
@@ -100,25 +103,38 @@ module.exports = async function (deployer, network, accounts) {
   addContract("system", "ve3TokenRewardPool", ve3TokenRewardPool.address);
 
   // configurations
-  await ve3Token.setOperator(depositor.address);
+  logTransaction(await ve3Token.setOperator(depositor.address), "ve3Token setOperator");
 
-  await voter.setDepositor(depositor.address, { from: voterProxyOwner });
+  logTransaction(await voter.setDepositor(depositor.address, { from: voterProxyOwner }), "voter proxy setDepositor");
 
-  await depositor.initialLock();
-  console.log("initial Lock created on DILL");
+  logTransaction(await depositor.initialLock(), "initial Lock created on DILL");
 
-  await poolManager.addBooster(booster.address, gaugeProxy);
-  await rFactory.addOperator(booster.address, pickle.address);
-  await tFactory.addOperator(booster.address);
-  await sFactory.addOperator(booster.address);
-  await ve3dRewardPool.addOperator(booster.address);
+  logTransaction(await poolManager.addBooster(booster.address, gaugeProxy), "pool Manager add Booster");
+  logTransaction(await rFactory.addOperator(booster.address, pickle.address), "reward factory add operator");
+  logTransaction(await tFactory.addOperator(booster.address), "token factory add operator");
+  logTransaction(await sFactory.addOperator(booster.address), "stash factory add operator");
+  logTransaction(await ve3dRewardPool.addOperator(booster.address), "ve3dRewardPool factory add operator");
   //add rewardToken to the pool
-  await ve3dRewardPool.addRewardToken(pickle.address, depositor.address, ve3TokenRewardPool.address, ve3Token.address);
+  logTransaction(
+    await ve3dRewardPool.addRewardToken(
+      pickle.address,
+      depositor.address,
+      ve3TokenRewardPool.address,
+      ve3Token.address
+    ),
+    "ve3dRewardPool addRewardToken"
+  );
 
-  await booster.setTreasury(depositor.address);
+  logTransaction(await booster.setTreasury(depositor.address), "booster setTreasury");
   /// TODO add xVE3D token pool
-  await booster.setRewardContracts(ve3TokenRewardPool.address, ve3dRewardPool.address, ve3dRewardPool.address);
-  await booster.setPoolManager(poolManager.address);
-  await booster.setFactories(rFactory.address, sFactory.address, tFactory.address);
-  await booster.setFeeInfo(toBN(10000), toBN(0));
+  logTransaction(
+    await booster.setRewardContracts(ve3TokenRewardPool.address, ve3dRewardPool.address, ve3dRewardPool.address),
+    "booster setRewardContracts"
+  );
+  logTransaction(await booster.setPoolManager(poolManager.address), "booster setPoolManager");
+  logTransaction(
+    await booster.setFactories(rFactory.address, sFactory.address, tFactory.address),
+    "booster setFactories"
+  );
+  logTransaction(await booster.setFeeInfo(toBN(10000), toBN(0)), "booster setFeeInfo");
 };
