@@ -1,9 +1,53 @@
 {
   "abi": [
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_nanme",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "_veAsset",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_escrow",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_gaugeProxy",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_curveMinter",
+          "type": "address"
+        },
+        {
+          "internalType": "enum IVoteEscrow.EscrowModle",
+          "name": "_escrowModle",
+          "type": "uint8"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "curveMinter",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
       "inputs": [],
@@ -16,8 +60,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
@@ -30,8 +73,20 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "escrowModle",
+      "outputs": [
+        {
+          "internalType": "enum IVoteEscrow.EscrowModle",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
       "inputs": [],
@@ -44,8 +99,20 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
       "inputs": [],
@@ -58,8 +125,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
@@ -72,12 +138,11 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
-      "name": "pickle",
+      "name": "veAsset",
       "outputs": [
         {
           "internalType": "address",
@@ -86,8 +151,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
@@ -99,9 +163,8 @@
           "type": "string"
         }
       ],
-      "stateMutability": "pure",
-      "type": "function",
-      "constant": true
+      "stateMutability": "view",
+      "type": "function"
     },
     {
       "inputs": [
@@ -146,6 +209,30 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "_stash",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "_status",
+          "type": "bool"
+        }
+      ],
+      "name": "setStashAccess",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "_token",
           "type": "address"
         },
@@ -161,6 +248,25 @@
           "internalType": "bool",
           "name": "",
           "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "_asset",
+          "type": "address"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "balance",
+          "type": "uint256"
         }
       ],
       "stateMutability": "nonpayable",
@@ -326,14 +432,14 @@
     {
       "inputs": [
         {
-          "internalType": "address[]",
+          "internalType": "address",
           "name": "_tokenVote",
-          "type": "address[]"
+          "type": "address"
         },
         {
-          "internalType": "uint256[]",
+          "internalType": "uint256",
           "name": "_weight",
-          "type": "uint256[]"
+          "type": "uint256"
         }
       ],
       "name": "voteGaugeWeight",
@@ -355,7 +461,7 @@
           "type": "address"
         }
       ],
-      "name": "claimPickle",
+      "name": "claimveAsset",
       "outputs": [
         {
           "internalType": "uint256",
@@ -407,8 +513,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     }
   ]
 }

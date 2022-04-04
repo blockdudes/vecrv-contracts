@@ -131,26 +131,7 @@
           "type": "address"
         }
       ],
-      "name": "claimPickle",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "claimCrv",
+      "name": "claimVeAsset",
       "outputs": [
         {
           "internalType": "uint256",

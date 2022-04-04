@@ -1,45 +1,32 @@
 {
   "abi": [
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_pools",
-          "type": "address"
-        }
-      ],
+      "inputs": [],
       "stateMutability": "nonpayable",
       "type": "constructor"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "gaugeProxies",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "operator",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "pools",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "registry",
       "outputs": [
         {
           "internalType": "address",
@@ -64,7 +51,44 @@
       "type": "function"
     },
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "pools",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "gaugeProxy",
+          "type": "address"
+        }
+      ],
+      "name": "addBooster",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "pools",
+          "type": "address"
+        }
+      ],
+      "name": "removeBooster",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "pools",
+          "type": "address"
+        }
+      ],
       "name": "revertControl",
       "outputs": [],
       "stateMutability": "nonpayable",
@@ -74,12 +98,12 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "_swap",
+          "name": "_lptoken",
           "type": "address"
         },
         {
           "internalType": "address",
-          "name": "_gauge",
+          "name": "_pools",
           "type": "address"
         },
         {
@@ -101,6 +125,11 @@
     },
     {
       "inputs": [
+        {
+          "internalType": "address",
+          "name": "_pools",
+          "type": "address"
+        },
         {
           "internalType": "uint256",
           "name": "_pid",

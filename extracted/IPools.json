@@ -42,7 +42,7 @@
           "type": "address"
         }
       ],
-      "name": "addPicklePool",
+      "name": "addPool",
       "outputs": [
         {
           "internalType": "bool",
