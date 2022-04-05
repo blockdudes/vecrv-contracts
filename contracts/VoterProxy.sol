@@ -183,11 +183,11 @@ contract VoterProxy {
     function voteGaugeWeight(address _tokenVote, uint256 _weight) external returns (bool) {
         require(msg.sender == operator, "!auth");
 
-        if (escrowModle == IVoteEscrow.EscrowModle.CURVE) {
-            IVoting(gaugeProxy).vote_for_gauge_weights(_tokenVote, _weight);
-        } else {
+        if (escrowModle == IVoteEscrow.EscrowModle.PICKLE) {
             //vote
             IVoting(gaugeProxy).vote(_tokenVote, _weight);
+        } else {
+            IVoting(gaugeProxy).vote_for_gauge_weights(_tokenVote, _weight);
         }
         return true;
     }
@@ -197,12 +197,12 @@ contract VoterProxy {
 
         uint256 _balance = 0;
 
-        if (escrowModle == IVoteEscrow.EscrowModle.CURVE) {
-            try ITokenMinter(curveMinter).mint(_gauge) {} catch {
+        if (escrowModle == IVoteEscrow.EscrowModle.PICKLE) {
+            try IGauge(_gauge).getReward() {} catch {
                 return _balance;
             }
         } else {
-            try IGauge(_gauge).getReward() {} catch {
+            try ITokenMinter(curveMinter).mint(_gauge) {} catch {
                 return _balance;
             }
         }

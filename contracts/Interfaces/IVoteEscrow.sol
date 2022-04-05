@@ -5,7 +5,8 @@ interface IVoteEscrow {
     enum EscrowModle {
         CURVE,
         PICKLE,
-        SNOW
+        SNOW,
+        RIBBON
     }
 
     function create_lock(uint256, uint256) external;

@@ -35,6 +35,8 @@ module.exports = async function (deployer, network, accounts) {
   const vetokenOperator = "0xa2a379a34cc30c69ab5597bb1c4b6c5c8b23d87e";
   // user has pickle balance in his wallet
   const pickleUser = "0xF8dB00cDdEEDd6BEA28dfF88F6BFb1B531A6cBc9";
+
+  const MAXTiME = toBN(4 * 364 * 86400);
   //deployer account
   const admin = accounts[0];
 
@@ -93,7 +95,7 @@ module.exports = async function (deployer, network, accounts) {
   addContract("system", "ve3Dill", ve3Token.address);
 
   // Depositer
-  await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, pickle.address, vePickle);
+  await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, pickle.address, vePickle, MAXTiME);
   const depositor = await VeAssetDepositor.deployed();
   addContract("system", "pickleDepositor", depositor.address);
 

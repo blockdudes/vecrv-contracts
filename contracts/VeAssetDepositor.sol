@@ -15,7 +15,7 @@ contract VeAssetDepositor {
     using Address for address;
     using SafeMath for uint256;
 
-    uint256 private constant MAXTIME = 4 * 364 * 86400;
+    //uint256 private constant MAXTIME = 2 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
 
     uint256 public lockIncentive = 10; //incentive to users who spend gas to lock veAsset
@@ -28,6 +28,7 @@ contract VeAssetDepositor {
     address public immutable minter;
     uint256 public incentiveVeAsset = 0;
     uint256 public unlockTime;
+    uint256 private maxTime;
 
     event FeeManagerUpdated(address indexed feeManager);
     event FeesUpdated(uint256 lockIncentive);
@@ -39,13 +40,15 @@ contract VeAssetDepositor {
         address _staker,
         address _minter,
         address _veAsset,
-        address _escrow
+        address _escrow,
+        uint256 _maxTime
     ) {
         staker = _staker;
         minter = _minter;
         veAsset = _veAsset;
         escrow = _escrow;
         feeManager = msg.sender;
+        maxTime = _maxTime;
     }
 
     function setFeeManager(address _feeManager) external {
@@ -68,7 +71,7 @@ contract VeAssetDepositor {
 
         uint256 veVeAsset = IERC20(escrow).balanceOf(staker);
         if (veVeAsset == 0) {
-            uint256 unlockAt = block.timestamp + MAXTIME;
+            uint256 unlockAt = block.timestamp + maxTime;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
             //release old lock if exists
@@ -97,7 +100,7 @@ contract VeAssetDepositor {
         //increase amount
         IStaker(staker).increaseAmount(veAssetBalanceStaker);
 
-        uint256 unlockAt = block.timestamp + MAXTIME;
+        uint256 unlockAt = block.timestamp + maxTime;
         uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
         //increase time too if over 2 week buffer
