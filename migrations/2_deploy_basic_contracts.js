@@ -5,8 +5,10 @@ const VeTokenMinter = artifacts.require("VeTokenMinter");
 const PoolManager = artifacts.require("PoolManager");
 const VeToken = artifacts.require("VeToken");
 const VE3DRewardPool = artifacts.require("VE3DRewardPool");
+const { addContract } = require("./helper/addContracts");
 
 module.exports = async function (deployer, network, accounts) {
+  global.created = false;
   const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
   const vetokenOperator = "0xa2a379a34cc30c69ab5597bb1c4b6c5c8b23d87e";
   const admin = accounts[0];
@@ -14,27 +16,35 @@ module.exports = async function (deployer, network, accounts) {
   // vetoken minter
   await deployer.deploy(VeTokenMinter, veTokenAddress);
   let vetokenMinter = await VeTokenMinter.deployed();
+  addContract("system", "vetokenMinter", vetokenMinter.address);
+  global.created = true;
   //mint vetoke to minter contract
   const vetoken = await VeToken.at(veTokenAddress);
   await vetoken.mint(vetokenMinter.address, web3.utils.toWei("30000000"), { from: vetokenOperator });
+  addContract("system", "vetoken", veTokenAddress);
 
   // reward factory
   await deployer.deploy(RewardFactory);
   const rFactory = await RewardFactory.deployed();
+  addContract("system", "rFactory", rFactory.address);
 
   // token factory
   await deployer.deploy(TokenFactory);
-  //const tFactory = await TokenFactory.deployed();
+  const tFactory = await TokenFactory.deployed();
+  addContract("system", "tFactory", tFactory.address);
 
   //stash factory
   await deployer.deploy(StashFactory, rFactory.address);
-  //const sFactory = await StashFactory.deployed();
+  const sFactory = await StashFactory.deployed();
+  addContract("system", "sFactory", sFactory.address);
 
   // pool manager
   await deployer.deploy(PoolManager);
-  //const poolManager = await PoolManager.deployed();
+  const poolManager = await PoolManager.deployed();
+  addContract("system", "poolManager", poolManager.address);
 
   // VE3DRewardPool
   await deployer.deploy(VE3DRewardPool, veTokenAddress, rFactory.address);
-  //const ve3dRewardPool = await VE3DRewardPool.deployed();
+  const ve3dRewardPool = await VE3DRewardPool.deployed();
+  addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
 };

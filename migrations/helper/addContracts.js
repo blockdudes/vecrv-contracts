@@ -1,20 +1,24 @@
 var fs = require("fs");
-var created = false;
+//global.created = false;
 var contractList;
 var systemContracts;
 var poolsContracts;
 var poolNames;
 
 var addContract = function (group, name, value) {
-  if (!created) {
+  if (!global.created) {
     contractList = {};
     systemContracts = {};
-    poolsContracts = [];
-    poolNames = [];
+    // poolsContracts = [];
+    // poolNames = [];
     contractList["system"] = systemContracts;
-    contractList["pools"] = poolsContracts;
-    created = true;
+    //contractList["pools"] = poolsContracts;
+    // global.created = true;
+  } else {
+    contractList = {};
+    contractList = getContract();
   }
+
   contractList[group][name] = value;
   var contractListOutput = JSON.stringify(contractList, null, 4);
   fs.writeFileSync("contracts.json", contractListOutput, function (err) {

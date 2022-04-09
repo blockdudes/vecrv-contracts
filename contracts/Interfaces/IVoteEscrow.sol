@@ -6,7 +6,8 @@ interface IVoteEscrow {
         CURVE,
         PICKLE,
         SNOW,
-        RIBBON
+        RIBBON,
+        IDLE
     }
 
     function create_lock(uint256, uint256) external;
