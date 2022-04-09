@@ -21,6 +21,11 @@
           "internalType": "address",
           "name": "_escrow",
           "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_maxTime",
+          "type": "uint256"
         }
       ],
       "stateMutability": "nonpayable",

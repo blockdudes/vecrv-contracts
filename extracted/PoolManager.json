@@ -1,69 +1,40 @@
 {
   "abi": [
     {
-      "inputs": [],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
+      "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
           "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "gaugeProxies",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "operator",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_operator",
-          "type": "address"
-        }
-      ],
-      "name": "setOperator",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "pools",
+          "name": "previousOwner",
           "type": "address"
         },
         {
+          "indexed": true,
           "internalType": "address",
-          "name": "gaugeProxy",
+          "name": "newOwner",
           "type": "address"
         }
       ],
-      "name": "addBooster",
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -72,24 +43,11 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "pools",
+          "name": "newOwner",
           "type": "address"
         }
       ],
-      "name": "removeBooster",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "pools",
-          "type": "address"
-        }
-      ],
-      "name": "revertControl",
+      "name": "transferOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -99,6 +57,11 @@
         {
           "internalType": "address",
           "name": "_lptoken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_gauge",
           "type": "address"
         },
         {
