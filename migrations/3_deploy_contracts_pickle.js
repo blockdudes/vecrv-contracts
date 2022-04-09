@@ -36,12 +36,16 @@ module.exports = async function (deployer, network, accounts) {
 
   // user has pickle balance in his wallet
   const pickleUser = "0xF8dB00cDdEEDd6BEA28dfF88F6BFb1B531A6cBc9";
+  // user has p3CRV balance in his wallet
+  const p3CRVUser = "0x1fe5F397e38fFe61E663d96821F41bCF83ed7959";
 
   const MAXTiME = toBN(4 * 364 * 86400);
   //deployer account
   const admin = accounts[0];
 
-  await web3.eth.sendTransaction({ from: admin, to: voterProxyOwner, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: voterProxyOwner, value: web3.utils.toWei("1") });
+  await web3.eth.sendTransaction({ from: admin, to: pickleUser, value: web3.utils.toWei("1") });
+  await web3.eth.sendTransaction({ from: admin, to: p3CRVUser, value: web3.utils.toWei("1") });
 
   const rFactory = await RewardFactory.deployed();
   //addContract("system", "rFactory", rFactory.address);

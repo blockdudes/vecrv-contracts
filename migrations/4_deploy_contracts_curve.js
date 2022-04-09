@@ -42,9 +42,9 @@ module.exports = async function (deployer, network, accounts) {
 
   let admin = accounts[0];
 
-  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("1") });
 
-  await web3.eth.sendTransaction({ from: admin, to: crvUser, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: crvUser, value: web3.utils.toWei("1") });
 
   const rFactory = await RewardFactory.deployed();
   addContract("system", "rFactory", rFactory.address);

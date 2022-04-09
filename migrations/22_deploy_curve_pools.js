@@ -2,6 +2,7 @@ const { getContract } = require("./helper/addContracts");
 const { logTransaction } = require("./helper/logger.js");
 
 const PoolManager = artifacts.require("PoolManager");
+const IERC20 = artifacts.require("IERC20");
 
 module.exports = async function (deployer, network, accounts) {
   const contractList = getContract();
@@ -18,4 +19,11 @@ module.exports = async function (deployer, network, accounts) {
   //   ),
   //   "add gauge PICKLE/ETH LP"
   // );
+
+  // funcd account[0] with lp token p3CRV
+  //  const p3crv = await IERC20.at("0x1bb74b5ddc1f4fc91d6f9e7906cf68bc93538e33");
+  //  logTransaction(
+  //    await p3crv.transfer(accounts[0], web3.utils.toWei("500"), { from: "0x1fe5F397e38fFe61E663d96821F41bCF83ed7959" }),
+  //    "funcd account[0] with lp token p3CRV"
+  //  );
 };

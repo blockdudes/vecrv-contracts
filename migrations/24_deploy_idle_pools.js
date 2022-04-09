@@ -2,6 +2,7 @@ const { getContract } = require("./helper/addContracts");
 const { logTransaction } = require("./helper/logger.js");
 
 const PoolManager = artifacts.require("PoolManager");
+const IERC20 = artifacts.require("IERC20");
 
 module.exports = async function (deployer, network, accounts) {
   const contractList = getContract();
@@ -11,51 +12,90 @@ module.exports = async function (deployer, network, accounts) {
 
   logTransaction(
     await poolManager.addPool(
-      "0xe63151A0Ed4e5fafdc951D877102cf0977Abd365",
-      "0x98c371567b8A196518dcb4A4383387A2C7339382",
+      "0x790E38D85a364DD03F682f5EcdC88f8FF7299908",
+      "0x21dDA17dFF89eF635964cd3910d167d562112f57",
       boosterAdd,
       3
     ),
-    "add gauge AAVE"
+    "add gauge AATranche_crvALUSD"
   );
 
   logTransaction(
     await poolManager.addPool(
-      "0x65a833afDc250D9d38f8CD9bC2B1E3132dB13B2F",
-      "0x8913EAb16a302dE3E498BbA39940e7A55c0B9325",
+      "0x2688FC68c4eac90d9E5e1B94776cF14eADe8D877",
+      "0x675eC042325535F6e176638Dd2d4994F645502B9",
       boosterAdd,
       3
     ),
-    "add gauge WBTC"
+    "add gauge AATranche_lido"
   );
 
   logTransaction(
     await poolManager.addPool(
-      "0x53773E034d9784153471813dacAFF53dBBB78E8c",
-      "0x4e079dCA26A4fE2586928c1319b20b1bf9f9be72",
+      "0x15794DA4DCF34E674C18BbFAF4a67FF6189690F5",
+      "0x7ca919Cf060D95B3A51178d9B1BCb1F324c8b693",
       boosterAdd,
       3
     ),
-    "add gauge stETH"
+    "add gauge AATranche_frax"
   );
 
   logTransaction(
     await poolManager.addPool(
-      "0x25751853Eab4D0eB3652B5eB6ecB102A2789644B",
-      "0x9038403C3F7C6B5Ca361C82448DAa48780D7C8Bd",
+      "0xFC96989b3Df087C96C806318436B16e44c697102",
+      "0x8cC001dd6C9f8370dB99c1e098e13215377Ecb95",
       boosterAdd,
       3
     ),
-    "add gauge ETH"
+    "add gauge AATranche_mim"
   );
 
   logTransaction(
     await poolManager.addPool(
-      "0xCc323557c71C0D1D20a1861Dc69c06C5f3cC9624",
-      "0xa8A9699161f266f7E79080ca0b65210820BE8732",
+      "0x158e04225777BBEa34D2762b5Df9eBD695C158D2",
+      "0xDfB27F2fd160166dbeb57AEB022B9EB85EA4611C",
       boosterAdd,
       3
     ),
-    "add gauge ryvUSDC"
+    "add gauge AATranche_3eur"
+  );
+
+  logTransaction(
+    await poolManager.addPool(
+      "0x060a53BCfdc0452F35eBd2196c6914e0152379A6",
+      "0x30a047d720f735Ad27ad384Ec77C36A4084dF63E",
+      boosterAdd,
+      3
+    ),
+    "add gauge AATranche_stecrv"
+  );
+
+  logTransaction(
+    await poolManager.addPool(
+      "0x4585F56B06D098D4EDBFc5e438b8897105991c6A",
+      "0xAbd5e3888ffB552946Fc61cF4C816A73feAee42E",
+      boosterAdd,
+      3
+    ),
+    "add gauge AATranche_musd"
+  );
+
+  logTransaction(
+    await poolManager.addPool(
+      "0xfC558914b53BE1DfAd084fA5Da7f281F798227E7",
+      "0x41653c7AF834F895Db778B1A31EF4F68Be48c37c",
+      boosterAdd,
+      3
+    ),
+    "add gauge AATranche_mstable"
+  );
+
+  // funcd account[0] with lp token AA_idleCvxalUSD3CRV-f
+  const idleCvxalUSD3CRV = await IERC20.at("0x790E38D85a364DD03F682f5EcdC88f8FF7299908");
+  logTransaction(
+    await idleCvxalUSD3CRV.transfer(accounts[0], web3.utils.toWei("1000"), {
+      from: "0xD2d24db10c43811302780e082A3E6f73a97eA48F",
+    }),
+    "funcd account[0] with lp token AA_idleCvxalUSD3CRV-f"
   );
 };

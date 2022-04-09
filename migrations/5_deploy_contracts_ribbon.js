@@ -38,16 +38,19 @@ module.exports = async function (deployer, network, accounts) {
   const gaugeController = "0x0cb9cc35cEFa5622E8d25aF36dD56DE142eF6415";
   const ribbonMintr = "0x5B0655F938A72052c46d2e94D206ccB6FF625A3A";
   const rbnUser = "0x50dFdF7836C90db447Ae6DD83a3EEE2B0417d051";
+  const rAAVEUser = "0x97a6B2f935B8f0BD61675a0D1E90Afd39651C205";
   const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
   const MAXTiME = toBN(2 * 365 * 86400);
 
   let admin = accounts[0];
 
-  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("1") });
 
-  await web3.eth.sendTransaction({ from: admin, to: rbnUser, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: rbnUser, value: web3.utils.toWei("1") });
 
-  await web3.eth.sendTransaction({ from: admin, to: escrowAdmin, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: escrowAdmin, value: web3.utils.toWei("1") });
+
+  await web3.eth.sendTransaction({ from: admin, to: rAAVEUser, value: web3.utils.toWei("1") });
 
   const rFactory = await RewardFactory.deployed();
   addContract("system", "rFactory", rFactory.address);

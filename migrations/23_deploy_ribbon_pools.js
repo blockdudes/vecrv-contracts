@@ -2,6 +2,7 @@ const { getContract } = require("./helper/addContracts");
 const { logTransaction } = require("./helper/logger.js");
 
 const PoolManager = artifacts.require("PoolManager");
+const IERC20 = artifacts.require("IERC20");
 
 module.exports = async function (deployer, network, accounts) {
   const contractList = getContract();
@@ -57,5 +58,12 @@ module.exports = async function (deployer, network, accounts) {
       3
     ),
     "add gauge ryvUSDC"
+  );
+
+  // funcd account[0] with lp token rAAVE-THETA
+  const rAAVE = await IERC20.at("0xe63151A0Ed4e5fafdc951D877102cf0977Abd365");
+  logTransaction(
+    await rAAVE.transfer(accounts[0], web3.utils.toWei("0.5"), { from: "0x97a6B2f935B8f0BD61675a0D1E90Afd39651C205" }),
+    "funcd account[0] with lp token rAAVE-THETA"
   );
 };

@@ -38,16 +38,19 @@ module.exports = async function (deployer, network, accounts) {
   const gaugeController = "0xaC69078141f76A1e257Ee889920d02Cc547d632f";
   const idleMintr = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0";
   const idleUser = "0x3675D2A334f17bCD4689533b7Af263D48D96eC72";
+  const AA_idleCvxalUSD3CRVUser = "0xD2d24db10c43811302780e082A3E6f73a97eA48F";
   const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
   const MAXTiME = toBN(4 * 365 * 86400);
 
   let admin = accounts[0];
 
-  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("1") });
 
-  await web3.eth.sendTransaction({ from: admin, to: idleUser, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: idleUser, value: web3.utils.toWei("1") });
 
-  await web3.eth.sendTransaction({ from: admin, to: idleAdmin, value: web3.utils.toWei("10") });
+  await web3.eth.sendTransaction({ from: admin, to: idleAdmin, value: web3.utils.toWei("1") });
+
+  await web3.eth.sendTransaction({ from: admin, to: AA_idleCvxalUSD3CRVUser, value: web3.utils.toWei("1") });
 
   const rFactory = await RewardFactory.deployed();
   addContract("system", "rFactory", rFactory.address);
@@ -113,7 +116,7 @@ module.exports = async function (deployer, network, accounts) {
   // Depositer
   await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, idle.address, stkIDLE, MAXTiME);
   const depositor = await VeAssetDepositor.deployed();
-  addContract("system", "ribbonDepositor", depositor.address);
+  addContract("system", "idleDepositor", depositor.address);
 
   // base reward pool for VE3Token
   await deployer.deploy(BaseRewardPool, 0, ve3Token.address, idle.address, booster.address, rFactory.address);
