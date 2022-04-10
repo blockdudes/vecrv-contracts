@@ -18,5 +18,7 @@ interface IVoteEscrow {
 
     function withdraw() external;
 
+    function claimRewards() external returns (bool);
+
     function smart_wallet_checker() external view returns (address);
 }

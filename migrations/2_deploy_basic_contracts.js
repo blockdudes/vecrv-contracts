@@ -46,5 +46,5 @@ module.exports = async function (deployer, network, accounts) {
   // VE3DRewardPool
   await deployer.deploy(VE3DRewardPool, veTokenAddress, rFactory.address);
   const ve3dRewardPool = await VE3DRewardPool.deployed();
-  addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
+  addContract("system", "vetokenRewards", ve3dRewardPool.address);
 };

@@ -21,8 +21,8 @@ contract VoterProxy {
     address public immutable veAsset;
     address public immutable escrow;
     address public immutable gaugeProxy;
-    // for curve only
-    address public immutable curveMinter;
+   
+    address public immutable minter;
 
     address public owner;
     address public operator;
@@ -38,7 +38,7 @@ contract VoterProxy {
         address _veAsset,
         address _escrow,
         address _gaugeProxy,
-        address _curveMinter,
+        address _minter,
         IVoteEscrow.EscrowModle _escrowModle
     ) {
         name = _nanme;
@@ -46,7 +46,7 @@ contract VoterProxy {
         escrow = _escrow;
         gaugeProxy = _gaugeProxy;
         owner = msg.sender;
-        curveMinter = _curveMinter;
+        minter = _minter;
         escrowModle = _escrowModle;
     }
 
@@ -202,7 +202,7 @@ contract VoterProxy {
                 return _balance;
             }
         } else {
-            try ITokenMinter(curveMinter).mint(_gauge) {} catch {
+            try ITokenMinter(minter).mint(_gauge) {} catch {
                 return _balance;
             }
         }
@@ -211,6 +211,12 @@ contract VoterProxy {
         IERC20(veAsset).safeTransfer(operator, _balance);
 
         return _balance;
+    }
+
+    function claimRewards(address _gauge) external returns (bool) {
+        require(msg.sender == operator, "!auth");
+        IGauge(_gauge).claim_rewards();
+        return true;
     }
 
     function claimFees(address _distroContract, address _token) external returns (uint256) {

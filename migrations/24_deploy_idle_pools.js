@@ -8,7 +8,7 @@ module.exports = async function (deployer, network, accounts) {
   const contractList = getContract();
 
   const poolManager = await PoolManager.at(contractList.system.poolManager);
-  const boosterAdd = contractList.system.idleBooster;
+  const boosterAdd = contractList.system.idle_booster;
 
   logTransaction(
     await poolManager.addPool(

@@ -1,5 +1,5 @@
 const { ether, balance, constants, time } = require("@openzeppelin/test-helpers");
-const { addContract } = require("./helper/addContracts");
+const { addContract, getContract } = require("./helper/addContracts");
 const { logTransaction } = require("./helper/logger.js");
 
 const VoterProxy = artifacts.require("VoterProxy");
@@ -22,6 +22,7 @@ function toBN(number) {
 
 module.exports = async function (deployer, network, accounts) {
   global.created = true;
+  const contractList = getContract();
   const pickle = await IERC20.at("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5");
   const feeDistro = "0x74C6CadE3eF61d64dcc9b97490d9FbB231e4BdCc";
   ///TODO change to pickle addresses
@@ -43,27 +44,14 @@ module.exports = async function (deployer, network, accounts) {
   //deployer account
   const admin = accounts[0];
 
+  const rFactory = await RewardFactory.deployed();
+  const tFactory = await TokenFactory.deployed();
+  const sFactory = await StashFactory.deployed();
+  const ve3dRewardPool = await VE3DRewardPool.deployed();
+
   await web3.eth.sendTransaction({ from: admin, to: voterProxyOwner, value: web3.utils.toWei("1") });
   await web3.eth.sendTransaction({ from: admin, to: pickleUser, value: web3.utils.toWei("1") });
   await web3.eth.sendTransaction({ from: admin, to: p3CRVUser, value: web3.utils.toWei("1") });
-
-  const rFactory = await RewardFactory.deployed();
-  //addContract("system", "rFactory", rFactory.address);
-
-  const tFactory = await TokenFactory.deployed();
-  //addContract("system", "tFactory", tFactory.address);
-
-  const sFactory = await StashFactory.deployed();
-  //addContract("system", "sFactory", sFactory.address);
-
-  const poolManager = await PoolManager.deployed();
-  //addContract("system", "poolManager", poolManager.address);
-
-  const vetokenMinter = await VeTokenMinter.deployed();
-  //addContract("system", "vetokenMinter", vetokenMinter.address);
-
-  const ve3dRewardPool = await VE3DRewardPool.deployed();
-  //addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
 
   // voter proxy
   const voter = await VoterProxy.at(voterProxyAddress);
@@ -76,32 +64,32 @@ module.exports = async function (deployer, network, accounts) {
     "fund pickle to voter proxy"
   );
 
-  addContract("system", "pickle", pickle.address);
-  addContract("system", "pickleVoterProxy", voter.address);
+  addContract("system", "pickle_address", pickle.address);
+  addContract("system", "pickle_voterProxy", voter.address);
 
   // booster
   await deployer.deploy(
     Booster,
     voter.address,
-    vetokenMinter.address,
+    contractList.system.vetokenMinter,
     pickle.address,
     feeDistro,
     voteOwnership,
     voteParameter
   );
   const booster = await Booster.deployed();
-  addContract("system", "pickleBooster", booster.address);
+  addContract("system", "pickle_booster", booster.address);
   logTransaction(await voter.setOperator(booster.address, { from: voterProxyOwner }), "voter setOperator");
 
   // VE3Token
   await deployer.deploy(VE3Token, "VeToken Finance DILL", "ve3Dill");
   const ve3Token = await VE3Token.deployed();
-  addContract("system", "ve3Dill", ve3Token.address);
+  addContract("system", "ve3_pickle", ve3Token.address);
 
   // Depositer
   await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, pickle.address, vePickle, MAXTiME);
   const depositor = await VeAssetDepositor.deployed();
-  addContract("system", "pickleDepositor", depositor.address);
+  addContract("system", "pickle_depositor", depositor.address);
 
   // base reward pool for VE3Token
   await deployer.deploy(BaseRewardPool, 0, ve3Token.address, pickle.address, booster.address, rFactory.address);
@@ -136,7 +124,7 @@ module.exports = async function (deployer, network, accounts) {
     await booster.setRewardContracts(ve3TokenRewardPool.address, ve3dRewardPool.address, ve3dRewardPool.address),
     "booster setRewardContracts"
   );
-  logTransaction(await booster.setPoolManager(poolManager.address), "booster setPoolManager");
+  logTransaction(await booster.setPoolManager(contractList.system.poolManager), "booster setPoolManager");
   logTransaction(
     await booster.setFactories(rFactory.address, sFactory.address, tFactory.address),
     "booster setFactories"

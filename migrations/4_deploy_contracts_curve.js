@@ -1,5 +1,5 @@
 const { ether, balance, constants, time } = require("@openzeppelin/test-helpers");
-const { addContract } = require("./helper/addContracts");
+const { addContract, getContract } = require("./helper/addContracts");
 
 const VoterProxy = artifacts.require("VoterProxy");
 const RewardFactory = artifacts.require("RewardFactory");
@@ -23,6 +23,7 @@ function toBN(number) {
 
 module.exports = async function (deployer, network, accounts) {
   global.created = true;
+  const contractList = getContract();
   let smartWalletWhitelistAddress = "0xca719728Ef172d0961768581fdF35CB116e0B7a4";
   let crv = await IERC20.at("0xD533a949740bb3306d119CC777fa900bA034cd52");
   let checkerAdmin = "0x40907540d8a6c65c637785e8f8b742ae6b0b9968";
@@ -36,33 +37,23 @@ module.exports = async function (deployer, network, accounts) {
   const gaugeController = "0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB";
   const curveMintr = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0";
   const crvUser = "0x7a16fF8270133F063aAb6C9977183D9e72835428";
+  const threeCrvUser = "0x701aEcF92edCc1DaA86c5E7EdDbAD5c311aD720C";
   const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
 
   const MAXTiME = toBN(4 * 364 * 86400);
 
   let admin = accounts[0];
 
+  const rFactory = await RewardFactory.deployed();
+  const tFactory = await TokenFactory.deployed();
+  const sFactory = await StashFactory.deployed();
+  const ve3dRewardPool = await VE3DRewardPool.deployed();
+
   await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("1") });
 
   await web3.eth.sendTransaction({ from: admin, to: crvUser, value: web3.utils.toWei("1") });
 
-  const rFactory = await RewardFactory.deployed();
-  addContract("system", "rFactory", rFactory.address);
-
-  const tFactory = await TokenFactory.deployed();
-  addContract("system", "tFactory", tFactory.address);
-
-  const sFactory = await StashFactory.deployed();
-  addContract("system", "sFactory", sFactory.address);
-
-  const poolManager = await PoolManager.deployed();
-  addContract("system", "poolManager", poolManager.address);
-
-  const vetokenMinter = await VeTokenMinter.deployed();
-  addContract("system", "vetokenMinter", vetokenMinter.address);
-
-  const ve3dRewardPool = await VE3DRewardPool.deployed();
-  addContract("system", "ve3dRewardPool", ve3dRewardPool.address);
+  await web3.eth.sendTransaction({ from: admin, to: threeCrvUser, value: web3.utils.toWei("1") });
 
   // voter proxy
   await deployer.deploy(VoterProxy, "CurveVoterProxy", crv.address, veCRV, gaugeController, curveMintr, 0);
@@ -79,32 +70,32 @@ module.exports = async function (deployer, network, accounts) {
     "fund crv to voter proxy"
   );
   // vetoken
-  addContract("system", "crv", crv.address);
-  addContract("system", "curveVoterProxy", voter.address);
+  addContract("system", "crv_address", crv.address);
+  addContract("system", "curve_voterProxy", voter.address);
 
   // booster
   await deployer.deploy(
     Booster,
     voter.address,
-    vetokenMinter.address,
+    contractList.system.vetokenMinter,
     crv.address,
     feeDistro,
     voteOwnership,
     voteParameter
   );
   const booster = await Booster.deployed();
-  addContract("system", "curveBooster", booster.address);
+  addContract("system", "curve_booster", booster.address);
   logTransaction(await voter.setOperator(booster.address), "voter setOperator");
 
   // VE3Token
   await deployer.deploy(VE3Token, "VeToken Finance veCRV", "ve3CRV");
   const ve3Token = await VE3Token.deployed();
-  addContract("system", "ve3CRV", ve3Token.address);
+  addContract("system", "ve3_curve", ve3Token.address);
 
   // Depositer
   await deployer.deploy(VeAssetDepositor, voter.address, ve3Token.address, crv.address, veCRV, MAXTiME);
   const depositor = await VeAssetDepositor.deployed();
-  addContract("system", "curveDepositor", depositor.address);
+  addContract("system", "curve_depositor", depositor.address);
 
   // base reward pool for VE3Token
   await deployer.deploy(BaseRewardPool, 0, ve3Token.address, crv.address, booster.address, rFactory.address);
@@ -134,7 +125,7 @@ module.exports = async function (deployer, network, accounts) {
     await booster.setRewardContracts(ve3TokenRewardPool.address, ve3dRewardPool.address, ve3dRewardPool.address),
     "booster setRewardContracts"
   );
-  logTransaction(await booster.setPoolManager(poolManager.address), "booster setPoolManager");
+  logTransaction(await booster.setPoolManager(contractList.system.poolManager), "booster setPoolManager");
   logTransaction(
     await booster.setFactories(rFactory.address, sFactory.address, tFactory.address),
     "booster setFactories"

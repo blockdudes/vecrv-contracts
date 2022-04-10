@@ -8,7 +8,7 @@ module.exports = async function (deployer, network, accounts) {
   const contractList = getContract();
 
   const poolManager = await PoolManager.at(contractList.system.poolManager);
-  const boosterAdd = contractList.system.pickleBooster;
+  const boosterAdd = contractList.system.pickle_booster;
 
   logTransaction(
     await poolManager.addPool(
