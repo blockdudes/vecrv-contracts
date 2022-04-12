@@ -11,8 +11,6 @@ const Booster = artifacts.require("Booster");
 const TokenFactory = artifacts.require("TokenFactory");
 const StashFactory = artifacts.require("StashFactory");
 const VE3DRewardPool = artifacts.require("VE3DRewardPool");
-const PoolManager = artifacts.require("PoolManager");
-const VeTokenMinter = artifacts.require("VeTokenMinter");
 const IERC20 = artifacts.require("IERC20");
 const BigNumber = require("bignumber.js");
 
@@ -25,14 +23,14 @@ module.exports = async function (deployer, network, accounts) {
   const contractList = getContract();
   const pickle = await IERC20.at("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5");
   const feeDistro = "0x74C6CadE3eF61d64dcc9b97490d9FbB231e4BdCc";
-  ///TODO change to pickle addresses
+  ///TODO  get this address
   const voteOwnership = "0xe478de485ad2fe566d49342cbd03e49ed7db3356";
+  ///TODO  get this address
   const voteParameter = "0xBCfF8B0b9419b9A88c44546519b1e909cF330399";
   const vePickle = "0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf";
-  //const gaugeProxy = "0x2e57627ACf6c1812F99e274d0ac61B786c19E74f";
+
   // whitelisted address
   const voterProxyAddress = "0x05A7Ebd3b20A2b0742FdFDe8BA79F6D22Ea9C351";
-  const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
   const voterProxyOwner = "0x30a8609c9d3f4a9ee8ebd556388c6d8479af77d1";
 
   // user has pickle balance in his wallet

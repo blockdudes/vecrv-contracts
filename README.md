@@ -1,11 +1,35 @@
-# vetoken-contracts
+## vetoken-contracts
+
+### migration instructions
 
 `npm run fork-mainnet`
 
-# for Curve
-`npm run deploy-local-curve`
+### deploy all projects at once
 
-# for Pickle
-`npm run deploy-local-pickle`
+`npm run deploy-local`
 
-`npm run deploy-pickle-pools`
+### deply curve
+
+`npm run deploy-basic-contract && npm run deploy-local-curve`
+
+### deply pickle
+
+`npm run deploy-basic-contract && npm run deploy-local-pickle`
+
+### deply ribbon
+
+`npm run deploy-basic-contract && npm run deploy-local-ribbon`
+
+### deply idle
+
+`npm run deploy-basic-contract && npm run deploy-local-idle`
+
+### deply angle
+
+`npm run deploy-basic-contract && npm run deploy-local-angle`
+
+### test all
+
+`npm run test-no-deploy`
+
+> **Note:** all deployed addresses will be in contracts.json file

@@ -1,5 +1,6 @@
 const { ether, balance, constants, time } = require("@openzeppelin/test-helpers");
 const { addContract, getContract } = require("./helper/addContracts");
+const { logTransaction } = require("./helper/logger");
 
 const VoterProxy = artifacts.require("VoterProxy");
 const RewardFactory = artifacts.require("RewardFactory");
@@ -10,12 +11,9 @@ const Booster = artifacts.require("Booster");
 const TokenFactory = artifacts.require("TokenFactory");
 const StashFactory = artifacts.require("StashFactory");
 const VE3DRewardPool = artifacts.require("VE3DRewardPool");
-const PoolManager = artifacts.require("PoolManager");
-const VeTokenMinter = artifacts.require("VeTokenMinter");
 const IERC20 = artifacts.require("IERC20");
 const SmartWalletWhitelist = artifacts.require("SmartWalletWhitelist");
 const BigNumber = require("bignumber.js");
-const { logAddress, logTransaction } = require("./helper/logger");
 
 function toBN(number) {
   return new BigNumber(number);
@@ -31,14 +29,11 @@ module.exports = async function (deployer, network, accounts) {
   const voteOwnership = "0xE478de485ad2fe566d49342Cbd03E49ed7DB3356";
   const voteParameter = "0xBCfF8B0b9419b9A88c44546519b1e909cF330399";
   const veCRV = "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2";
-  ///TODO check the address
-  //const gaugeProxy = "0x0000000022D53366457F9d5E68Ec105046FC4383";
-  ///TODO check the address
+
   const gaugeController = "0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB";
   const curveMintr = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0";
   const crvUser = "0x7a16fF8270133F063aAb6C9977183D9e72835428";
   const threeCrvUser = "0x701aEcF92edCc1DaA86c5E7EdDbAD5c311aD720C";
-  const veTokenAddress = "0x1F209ed40DD77183e9B69c72106F043e0B51bf24";
 
   const MAXTiME = toBN(4 * 364 * 86400);
 
