@@ -91,11 +91,11 @@ module.exports = async function (deployer, network, accounts) {
   );
 
   // funcd account[0] with lp token AA_idleCvxalUSD3CRV-f
-  const idlesanDAI_EUR = await IERC20.at("0x7B8E89b0cE7BAC2cfEC92A371Da899eA8CBdb450");
+  const sanDAI_EUR = await IERC20.at("0x7B8E89b0cE7BAC2cfEC92A371Da899eA8CBdb450");
   logTransaction(
-    await idlesanDAI_EUR.transfer(accounts[0], web3.utils.toWei("1000"), {
-      from: "0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4",
+    await sanDAI_EUR.transfer(accounts[0], web3.utils.toWei("1000"), {
+      from: "0x5aB0e4E355b08e692933c1F6f85fd0bE56aD18A6",
     }),
-    "funcd account[0] with lp token sanDAI_EUR-f"
+    "funcd account[0] with lp token sanDAI_EUR"
   );
 };

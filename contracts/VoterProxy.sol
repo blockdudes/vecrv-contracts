@@ -21,7 +21,7 @@ contract VoterProxy {
     address public immutable veAsset;
     address public immutable escrow;
     address public immutable gaugeProxy;
-   
+
     address public immutable minter;
 
     address public owner;
@@ -192,7 +192,7 @@ contract VoterProxy {
         return true;
     }
 
-    function claimveAsset(address _gauge) external returns (uint256) {
+    function claimVeAsset(address _gauge) external returns (uint256) {
         require(msg.sender == operator, "!auth");
 
         uint256 _balance = 0;

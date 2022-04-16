@@ -39,7 +39,7 @@ module.exports = async function (deployer, network, accounts) {
   ///TODO get this address
   const angleMintr = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0";
   const angleUser = "0x2Fc443960971e53FD6223806F0114D5fAa8C7C4e";
-  const sanDAI_EURUser = "0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4";
+  const sanDAI_EURUser = "0x5aB0e4E355b08e692933c1F6f85fd0bE56aD18A6";
 
   const MAXTiME = toBN(4 * 365 * 86400);
 
@@ -59,7 +59,7 @@ module.exports = async function (deployer, network, accounts) {
   await web3.eth.sendTransaction({ from: admin, to: sanDAI_EURUser, value: web3.utils.toWei("1") });
 
   // voter proxy
-  await deployer.deploy(VoterProxy, "ribbonVoterProxy", angle.address, veANGLE, gaugeController, angleMintr, 4);
+  await deployer.deploy(VoterProxy, "angleVoterProxy", angle.address, veANGLE, gaugeController, angleMintr, 4);
   const voter = await VoterProxy.deployed();
 
   // set wallet checker in escrow

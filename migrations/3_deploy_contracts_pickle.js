@@ -13,6 +13,7 @@ const StashFactory = artifacts.require("StashFactory");
 const VE3DRewardPool = artifacts.require("VE3DRewardPool");
 const IERC20 = artifacts.require("IERC20");
 const BigNumber = require("bignumber.js");
+const SmartWalletWhitelist = artifacts.require("SmartWalletWhitelist");
 
 function toBN(number) {
   return new BigNumber(number);
@@ -21,6 +22,8 @@ function toBN(number) {
 module.exports = async function (deployer, network, accounts) {
   global.created = true;
   const contractList = getContract();
+  const smartWalletWhitelistAddress = "0x2Ff4F44F86f49D45A1C3626BAb9d222E84E9e78f";
+  const checkerAdmin = "0x9d074E37d408542FD38be78848e8814AFB38db17";
   const pickle = await IERC20.at("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5");
   const feeDistro = "0x74C6CadE3eF61d64dcc9b97490d9FbB231e4BdCc";
   ///TODO  get this address
@@ -28,7 +31,7 @@ module.exports = async function (deployer, network, accounts) {
   ///TODO  get this address
   const voteParameter = "0xBCfF8B0b9419b9A88c44546519b1e909cF330399";
   const vePickle = "0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf";
-
+  const gaugeController = "0x2e57627ACf6c1812F99e274d0ac61B786c19E74f";
   // whitelisted address
   const voterProxyAddress = "0x05A7Ebd3b20A2b0742FdFDe8BA79F6D22Ea9C351";
   const voterProxyOwner = "0x30a8609c9d3f4a9ee8ebd556388c6d8479af77d1";
@@ -47,12 +50,24 @@ module.exports = async function (deployer, network, accounts) {
   const sFactory = await StashFactory.deployed();
   const ve3dRewardPool = await VE3DRewardPool.deployed();
 
-  await web3.eth.sendTransaction({ from: admin, to: voterProxyOwner, value: web3.utils.toWei("1") });
+  await web3.eth.sendTransaction({ from: admin, to: checkerAdmin, value: web3.utils.toWei("1") });
   await web3.eth.sendTransaction({ from: admin, to: pickleUser, value: web3.utils.toWei("1") });
   await web3.eth.sendTransaction({ from: admin, to: p3CRVUser, value: web3.utils.toWei("1") });
 
   // voter proxy
-  const voter = await VoterProxy.at(voterProxyAddress);
+  await deployer.deploy(
+    VoterProxy,
+    "PickleVoterProxy",
+    pickle.address,
+    vePickle,
+    gaugeController,
+    constants.ZERO_ADDRESS,
+    1
+  );
+  const voter = await VoterProxy.deployed();
+  // whitelist the voter proxy
+  const whitelist = await SmartWalletWhitelist.at(smartWalletWhitelistAddress);
+  logTransaction(await whitelist.approveWallet(voter.address, { from: checkerAdmin }), "whitelist voter proxy");
 
   // fund admint pickle tokens
   logTransaction(await pickle.transfer(admin, web3.utils.toWei("16000"), { from: pickleUser }), "fund pickls to admin");
@@ -77,7 +92,7 @@ module.exports = async function (deployer, network, accounts) {
   );
   const booster = await Booster.deployed();
   addContract("system", "pickle_booster", booster.address);
-  logTransaction(await voter.setOperator(booster.address, { from: voterProxyOwner }), "voter setOperator");
+  logTransaction(await voter.setOperator(booster.address), "voter setOperator");
 
   // VE3Token
   await deployer.deploy(VE3Token, "VeToken Finance DILL", "ve3Dill");
@@ -97,7 +112,7 @@ module.exports = async function (deployer, network, accounts) {
   // configurations
   logTransaction(await ve3Token.setOperator(depositor.address), "ve3Token setOperator");
 
-  logTransaction(await voter.setDepositor(depositor.address, { from: voterProxyOwner }), "voter proxy setDepositor");
+  logTransaction(await voter.setDepositor(depositor.address), "voter proxy setDepositor");
 
   logTransaction(await depositor.initialLock(), "initial Lock created on DILL");
 
